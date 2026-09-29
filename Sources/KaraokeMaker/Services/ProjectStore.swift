@@ -8,8 +8,9 @@ import SwiftUI
 @MainActor
 final class ProjectStore: ObservableObject {
 
-    /// Đuôi file project.
-    static let fileExtension = "kbproj"
+    /// Đuôi file project. `nonisolated` — chỉ là hằng chuỗi, không đụng state của actor, nhưng
+    /// bị gọi từ vài chỗ KHÔNG phải MainActor (`RecentProjects`, `ProjectLibrary` quét đĩa nền).
+    nonisolated static let fileExtension = "kbproj"
 
     /// Dự án đang chỉnh sửa.
     @Published var project: KaraokeProject

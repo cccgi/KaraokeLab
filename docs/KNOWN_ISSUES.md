@@ -358,6 +358,21 @@ engine, timeline chuyên nghiệp, keyframe...).
 Toàn bộ chi tiết đo đạc/lý do của từng lần sửa vẫn giữ nguyên bên dưới (SỬA LẦN 7-14) để tham khảo
 nếu sau này muốn thử lại — nhưng CODE ĐÃ KHÔNG CÒN áp dụng những mục đó nữa.
 
+## ~~OPEN~~ · TÌM RA NGUỒN "KHÔNG CHẠY CŨNG LAG" THẬT — CÓ VOCAL/BEAT STEM LÀ NGUYÊN NHÂN — XÁC NHẬN ĐÃ HẾT (2026-09-29)
+**Kiểm chứng lại hôm nay (kiến trúc sư trưởng mới), KHÔNG còn tái hiện được**: mở đúng project
+`Gánh Mẹ...kbproj` đã lưu SẴN vocal+beat stem trên đĩa (tách xong, ⌘S, quit hẳn app, mở lại từ Home
+— đúng kịch bản mục này mô tả), đo idle thật 18 giây liên tục (`ps -o pcpu`, lấy mẫu mỗi 3s): 0,0–0,5%
+CPU suốt, không có mẫu nào cao. Nhiều khả năng đã được sửa "ăn theo" bởi lần sửa `EditorCommandSink`
+không-`Equatable` (2026-09-24, xem mục bên dưới) — lần sửa đó xảy ra SAU note này nhưng chưa từng
+quay lại đóng mục này. Bộ harness đo cũ (`KM_BODY_LOG`/`KM_AUTO_STRESS`/`KM_AUTO_OPEN`) đã bị gỡ
+hẳn khỏi code trong đợt "ĐÃ GỠ HẾT" 2026-09-22 nên không dùng lại y hệt cách đo cũ được — đo thay
+bằng `ps`/`sample` trực tiếp trên bản release đóng gói thật (`dist/KaraokeMaker.app`). Để mở lại nếu
+user vẫn báo lag đứng yên: nghi trước tiên `EditorCommandSink`/bất kỳ giá trị nào đi qua
+`.focusedSceneValue` thiếu `Equatable` (bài học ghi ở mục 2026-09-24), KHÔNG quay lại nghi
+`adoptOrRefreshBeatSep`/`beatSepProxy` trước — đã đo sạch nhiều lần với đúng loại project có stem.
+
+<details><summary>Ghi chép gốc (2026-09-19, lúc còn là OPEN) — giữ lại để tham khảo phương pháp đo</summary>
+
 ## OPEN · TÌM RA NGUỒN "KHÔNG CHẠY CŨNG LAG" THẬT — CÓ VOCAL/BEAT STEM LÀ NGUYÊN NHÂN, CHƯA TÌM RA CƠ CHẾ CHÍNH XÁC (2026-09-19)
 Sau nhiều lần user báo "chạy không chạy gì cũng lag" mà đo trên project TEST (nhẹ, không stem) lại
 sạch — phát hiện ra lỗi PHƯƠNG PHÁP: mọi lần đo trước đó (SỬA LẦN 7-13) đều dùng project test nhẹ,
@@ -403,6 +418,8 @@ stage`).
   karaoke xong (tức là hầu hết mọi lúc user thực sự dùng app), giải thích tại sao user thấy
   "không hề thay đổi" dù các lần sửa trước (SỬA LẦN 7-13) đều đo sạch — vì toàn đo nhầm loại
   project không có stem.
+
+</details>
 
 ## OPEN · Lag toàn app trên iMac 2017 Intel — SỬA LẦN 13, ẢNH CHỮ CACHE SAI ĐỊNH DẠNG — ĐÃ SỬA, VẪN CÒN GIẬT NHẸ HƠN KHI KÉO NHANH QUA NHIỀU CÂU (2026-09-18)
 User: "vậy thì sửa đi" (tiếp SỬA LẦN 12). Tìm ra: ảnh chữ karaoke đã CACHE ĐÚNG (không dựng lại

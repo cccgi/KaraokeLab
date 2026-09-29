@@ -60,8 +60,12 @@ final class AutoLyricsController: ObservableObject {
     /// Phiên project (ProjectStore.projectSessionID) đã bắt đầu lượt hiện tại.
     private(set) var jobOwner: UUID? { didSet { AutoLyricsDebug.jobOwner = jobOwner?.uuidString.prefix(8).description ?? "-" } }
 
-    init(service: LyricTranscriptionService = QwenHelperTranscriptionService(), gate: AutoLyricsJobGate = .shared) {
-        self.service = service; self.gate = gate
+    // `gate` defaults to nil (resolved to `.shared` in the body) rather than `= .shared` directly:
+    // a default-argument expression referencing a MainActor-isolated static is evaluated in the
+    // caller's inferred context, which Swift 6 flags even though this whole class is @MainActor —
+    // resolving it inside the (actor-isolated) init body sidesteps that false positive.
+    init(service: LyricTranscriptionService = QwenHelperTranscriptionService(), gate: AutoLyricsJobGate? = nil) {
+        self.service = service; self.gate = gate ?? .shared
     }
 
     deinit {                                    // ContentView bị huỷ (đổi tab…) → không để helper mồ côi

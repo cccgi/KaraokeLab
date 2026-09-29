@@ -177,7 +177,7 @@ enum KaraokeRenderer {
         let lines = frameLines(in: project, at: t)
 
         // Dời / phóng CẢ KHỐI chữ (ngang + keyframe dọc/cỡ) — KHÔNG đụng layout → không rebuild cache.
-        _ = applyBlockKF(cg, project: project, style: style, t: t, canvasSize: canvasSize)
+        applyBlockKF(cg, project: project, style: style, t: t, canvasSize: canvasSize)
 
         // ----- Câu chính -----
         // "Luôn 2 dòng": mượn câu kế tiếp làm dòng 2 khi câu chính ngắn.
@@ -346,7 +346,7 @@ enum KaraokeRenderer {
 
         let lines = frameLines(in: project, at: t)
 
-        _ = applyBlockKF(cg, project: project, style: style, t: t, canvasSize: canvasSize)
+        applyBlockKF(cg, project: project, style: style, t: t, canvasSize: canvasSize)
 
         // "Luôn 2 dòng" giờ là THUỘC TÍNH CHẾ ĐỘ (`style.alwaysTwoRows`) — preset "Karaoke" bật,
         // "Lyric" tắt (chỉ 1 dòng). Không còn ép cứng cho mọi style.

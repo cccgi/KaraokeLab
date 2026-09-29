@@ -50,30 +50,40 @@ enum SpectrumStore {
     private static var cache: [String: SpectrumData] = [:]
     private static var inflight: Set<String> = []
 
+    /// `NSLock.lock()/unlock()` are `noasync` (Swift 6 flags calling them directly inside an
+    /// `async` closure, e.g. `Task.detached { ... }`, even when never held across a suspension
+    /// point). Routing through a plain, non-`async` function keeps the lock/unlock calls in a
+    /// synchronous context regardless of what calls this — same effect, no warning.
+    private static func withLock<T>(_ body: () -> T) -> T {
+        lock.lock(); defer { lock.unlock() }
+        return body()
+    }
+
     /// Bắn khi phân tích xong (để Preview vẽ lại). `userInfo["path"]`.
     static let readyNote = Notification.Name("SpectrumStore.ready")
 
     static func data(for url: URL) -> SpectrumData? {
-        lock.lock(); defer { lock.unlock() }
-        return cache[url.path]
+        withLock { cache[url.path] }
     }
 
     /// Bắt đầu phân tích nếu chưa có / chưa chạy. Gọi nhiều lần vẫn an toàn.
     static func ensure(for url: URL) {
         let path = url.path
-        lock.lock()
-        if cache[path] != nil || inflight.contains(path) { lock.unlock(); return }
-        inflight.insert(path)
-        lock.unlock()
+        let alreadyHandled = withLock { () -> Bool in
+            if cache[path] != nil || inflight.contains(path) { return true }
+            inflight.insert(path)
+            return false
+        }
+        if alreadyHandled { return }
         Task.detached(priority: .utility) {
             let d = analyze(url: url, bands: internalBands, fps: fps)
-            lock.lock()
-            if let d {
-                if cache.count > 4 { cache.removeAll(keepingCapacity: true) }
-                cache[path] = d
+            withLock {
+                if let d {
+                    if cache.count > 4 { cache.removeAll(keepingCapacity: true) }
+                    cache[path] = d
+                }
+                inflight.remove(path)
             }
-            inflight.remove(path)
-            lock.unlock()
             if d != nil {
                 await MainActor.run {
                     NotificationCenter.default.post(name: readyNote, object: nil, userInfo: ["path": path])
@@ -104,10 +114,10 @@ enum SpectrumStore {
         if let d = data(for: url) { return d }
         let d = analyze(url: url, bands: internalBands, fps: fps)
         if let d {
-            lock.lock()
-            if cache.count > 4 { cache.removeAll(keepingCapacity: true) }
-            cache[url.path] = d
-            lock.unlock()
+            withLock {
+                if cache.count > 4 { cache.removeAll(keepingCapacity: true) }
+                cache[url.path] = d
+            }
         }
         return d
     }

@@ -1,6 +1,39 @@
 # PROGRESS
 
 ## CURRENT MILESTONE
+### 2026-09-29 (chiều) — DỌN CẢNH BÁO SWIFT 6 + XÁC NHẬN CŨ "CÓ STEM = LAG" ĐÃ HẾT (audit, app KHÔNG đổi hành vi)
+Tiếp đợt audit sau khi bàn giao. Không đụng file cấm (danh sách ở `CLAUDE.md`).
+
+- **Dọn cảnh báo Swift 6** (sẽ thành LỖI cứng khi bật chế độ ngôn ngữ Swift 6 — chưa bật, nhưng dọn
+  trước cho nhẹ nợ): `SpectrumAnalyzer.swift` + `AutoLyricsTestCLI.swift` (gọi `NSLock.lock()/
+  unlock()` trực tiếp trong context `async` — gói lại qua hàm `withLock` KHÔNG-`async` để giữ đúng
+  ngữ nghĩa, không đổi khoá/mở khoá thật); `ProjectStore.fileExtension` + `AutoLyricsJobGate` default
+  argument (`= .shared`) — 2 dạng cảnh báo actor-isolation khác nhau, sửa theo đúng khuyến nghị
+  Swift (thêm `nonisolated` cho hằng số thuần, đổi default argument từ biểu thức MainActor-isolated
+  sang `nil` + resolve trong thân hàm); `KaraokeRenderer.swift` bỏ `_ =` thừa (hàm trả `Void`);
+  `OverlayAudioMixer.swift` — đây là 1 race THẬT (không chỉ warning giả): completion handler của
+  `player.seek(...)` không đảm bảo chạy trên MainActor nhưng ghi thẳng vào `Entry.seeking` (mọi chỗ
+  đọc khác đều qua `tick()`, MainActor) — sửa bằng `Task { @MainActor in entry?.seeking = false }`.
+  Build lại (`swift build -c release`, whole-module) 0 lỗi, 0 cảnh báo mới; còn lại đúng 2 cảnh báo
+  "will never be executed" trong `LocalAligner.swift` (file cấm, không đụng) + các API AVFoundation/
+  CIKernel deprecated (đổi sang async `load(.duration)`/`loadTracks` là việc LỚN hơn, đụng nhiều nơi
+  xuất video — để riêng, không trong scope đợt này, giống chính sách cũ ghi trong file này).
+- **Gỡ `Scripts/build-app.sh`** — script cũ, GHI ĐÈ CÙNG `dist/KaraokeMaker.app` mà `pack-local.sh`
+  dùng nhưng bằng cơ chế build khác (universal `--arch arm64 --arch x86_64` thay vì kiến trúc máy
+  hiện tại) — đã bị thay thế hẳn bởi `pack-local.sh`/`package-release.sh`, không còn chỗ nào
+  reference tới, không giống `push-m4.sh` (file đó `CLAUDE.md` ghi rõ GIỮ LẠI làm phương án dự
+  phòng) nên gỡ an toàn.
+- **Xác nhận lại mục "CÓ VOCAL/BEAT STEM = LAG ĐỨNG YÊN" (2026-09-19) — KHÔNG còn tái hiện được**:
+  đo trực tiếp trên `dist/KaraokeMaker.app` (bản đã dọn cảnh báo ở trên) với đúng kịch bản gốc mô tả
+  (project có vocal+beat stem LƯU SẴN trên đĩa, mở lại từ Home, đo idle không thao tác) — 18 giây
+  liên tục 0,0–0,5% CPU, không có lần nào cao. Đã cập nhật `KNOWN_ISSUES.md` đóng mục đó lại (gấp
+  vào `<details>`, giữ ghi chép gốc để tham khảo phương pháp đo). Nhiều khả năng mục đó đã được sửa
+  "ăn theo" bởi lần sửa `EditorCommandSink` (2026-09-24) — xảy ra sau note 09-19 nhưng chưa từng
+  quay lại xác nhận. Mục "KẾT HỢP NHIỀU THAO TÁC CÙNG LÚC VẪN GIẬT VỪA" (2026-09-21) CHƯA kiểm
+  chứng lại được — bộ harness đo cũ (`KM_AUTO_STRESS`) đã bị gỡ khỏi code (đợt "ĐÃ GỠ HẾT" 09-22),
+  cần dựng lại cách đo khác nếu muốn đào tiếp.
+
+
 ### 2026-09-29 — SỬA LAG CPU CAO LIÊN TỤC LÚC "Không cần lời" ĐANG NHẬN DẠNG (kể cả sau khi Huỷ)
 Chủ dự án bàn giao lại cho kiến trúc sư trưởng mới (Claude Code, máy khác — xem
 `ARCHITECTURAL_HANDOVER_AND_AUDIT.md`). Sau khi build + chạy thử `dist/KaraokeMaker.app`, phát hiện

@@ -104,7 +104,11 @@ final class OverlayAudioMixer: ObservableObject {
                 player.seek(to: CMTime(seconds: target, preferredTimescale: 600),
                             toleranceBefore: .zero,
                             toleranceAfter: CMTime(value: 1, timescale: 30)) { [weak entry] _ in
-                    entry?.seeking = false
+                    // `Entry` isn't itself @MainActor and AVPlayer doesn't guarantee this handler
+                    // runs on any particular thread — every other access to `seeking` (in `tick()`)
+                    // is MainActor-isolated, so hop back explicitly rather than write from wherever
+                    // AVFoundation happens to call this.
+                    Task { @MainActor in entry?.seeking = false }
                 }
             }
 

@@ -127,11 +127,15 @@ enum AutoLyricsTestCLI {
         var mode: Mode
         private let l = NSLock(); private var _cancels = 0; private var _calls = 0
         init(_ m: Mode) { mode = m }
-        var cancelCalls: Int { l.lock(); defer { l.unlock() }; return _cancels }
-        var calls: Int { l.lock(); defer { l.unlock() }; return _calls }
-        func cancel() { l.lock(); _cancels += 1; l.unlock() }
+        // `NSLock.lock()/unlock()` are `noasync` — Swift 6 flags calling them directly inside an
+        // `async` function even when never held across a suspension point. Routing through a
+        // plain, non-`async` helper keeps the lock calls in a synchronous context.
+        private func withLock<T>(_ body: () -> T) -> T { l.lock(); defer { l.unlock() }; return body() }
+        var cancelCalls: Int { withLock { _cancels } }
+        var calls: Int { withLock { _calls } }
+        func cancel() { withLock { _cancels += 1 } }
         func generateLyrics(audioURL: URL, vocalStemURL: URL?, progress: @escaping @Sendable (AutoLyricsProgress) -> Void) async throws -> GeneratedLyricsResult {
-            l.lock(); _calls += 1; l.unlock()
+            withLock { _calls += 1 }
             progress(.recognizing(done: 1, total: 14))
             switch mode {
             case .succeed(let r): try await Task.sleep(nanoseconds: 80_000_000); return r
@@ -146,18 +150,20 @@ enum AutoLyricsTestCLI {
     /// Dịch vụ giả đo số lượt chạy ĐỒNG THỜI toàn tiến trình.
     private final class CountingStub: LyricTranscriptionService, @unchecked Sendable {
         private static let l = NSLock(); private static var active = 0, _max = 0, _total = 0
-        static func reset() { l.lock(); active = 0; _max = 0; _total = 0; l.unlock() }
-        static var maxActive: Int { l.lock(); defer { l.unlock() }; return _max }
-        static var total: Int { l.lock(); defer { l.unlock() }; return _total }
+        private static func withLock<T>(_ body: () -> T) -> T { l.lock(); defer { l.unlock() }; return body() }
+        static func reset() { withLock { active = 0; _max = 0; _total = 0 } }
+        static var maxActive: Int { withLock { _max } }
+        static var total: Int { withLock { _total } }
         private let stopLock = NSLock(); private var stopped = false
-        func cancel() { stopLock.lock(); stopped = true; stopLock.unlock() }
+        private func withStopLock<T>(_ body: () -> T) -> T { stopLock.lock(); defer { stopLock.unlock() }; return body() }
+        func cancel() { withStopLock { stopped = true } }
         func generateLyrics(audioURL: URL, vocalStemURL: URL?, progress: @escaping @Sendable (AutoLyricsProgress) -> Void) async throws -> GeneratedLyricsResult {
-            Self.l.lock(); Self.active += 1; Self._total += 1; Self._max = max(Self._max, Self.active); Self.l.unlock()
-            defer { Self.l.lock(); Self.active -= 1; Self.l.unlock() }
+            Self.withLock { Self.active += 1; Self._total += 1; Self._max = max(Self._max, Self.active) }
+            defer { Self.withLock { Self.active -= 1 } }
             progress(.recognizing(done: 1, total: 14))
             for _ in 0..<15 {                                              // ~300 ms, huỷ được, và (như helper thật) mất thêm chút để tắt
                 try await Task.sleep(nanoseconds: 20_000_000)
-                stopLock.lock(); let st = stopped; stopLock.unlock()
+                let st = withStopLock { stopped }
                 if st || Task.isCancelled { try await Task.sleep(nanoseconds: 150_000_000); throw CancellationError() }
             }
             return GeneratedLyricsResult(lines: [GeneratedLyricLine(words: [.init(text: "a", confidence: .confident)])])

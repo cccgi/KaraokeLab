@@ -120,7 +120,9 @@ final class AutoKaraokeFlow: ObservableObject {
     /// logic ASR thật — chặng đầu tiên luôn hiện ngay (mốc `.distantPast`).
     private var lastRecognizingPublish = Date.distantPast
 
-    init(service: LyricTranscriptionService = QwenHelperTranscriptionService(), gate: AutoLyricsJobGate = .shared) {
+    // See the matching comment on AutoLyricsController.init — `gate` defaults to nil here too, for
+    // the same reason (avoids a Swift 6 false positive on a MainActor-isolated default argument).
+    init(service: LyricTranscriptionService = QwenHelperTranscriptionService(), gate: AutoLyricsJobGate? = nil) {
         asr = AutoLyricsController(service: service, gate: gate)
     }
 
