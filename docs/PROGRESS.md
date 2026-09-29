@@ -1,6 +1,37 @@
 # PROGRESS
 
 ## CURRENT MILESTONE
+### 2026-09-29 — SỬA LAG CPU CAO LIÊN TỤC LÚC "Không cần lời" ĐANG NHẬN DẠNG (kể cả sau khi Huỷ)
+Chủ dự án bàn giao lại cho kiến trúc sư trưởng mới (Claude Code, máy khác — xem
+`ARCHITECTURAL_HANDOVER_AND_AUDIT.md`). Sau khi build + chạy thử `dist/KaraokeMaker.app`, phát hiện
+CPU app đứng ở 190–280% liên tục lúc đường "Không cần lời" đang ở bước "Đang nhận dạng lời…" —
+**và VẪN CÒN CAO NGAY CẢ SAU KHI BẤM HUỶ** (UI đã về "Bắt đầu tạo Karaoke", không có gì chạy nhìn
+bằng mắt, nhưng `ps` vẫn báo ~250%).
+- **Chẩn đoán bằng `sample` (đúng công cụ dự án đã dùng nhiều lần trước đây)**: >95% thời gian nằm
+  trong bộ máy diff view của SwiftUI (`AttributeGraph`/`ViewBodyAccessor`/`Picker.body.getter`…),
+  với `ContentView.body.getter` và `AutoKaraokeFlow.runAll(token:)` (dòng `case .running(let p):
+  phase = .recognizing(p)`) xuất hiện trực tiếp trên stack lúc lấy mẫu — xác nhận đây CHÍNH XÁC là
+  1 biến thể MỚI của lớp lỗi đã tìm ra năm 2026-09-17 (`EditorCommandSink`/`BeatSepProxy`/
+  `AdvancedKaraokeProxy`, xem comment đầu `ContentView.swift`): 1 `@Published` phát tín hiệu NHIỀU
+  LẦN/GIÂY, không qua throttle, kéo TOÀN BỘ `ContentView.body` (3 cột + timeline) dựng lại mỗi lần.
+- **Gốc**: `AutoKaraokeFlow` (luồng "Không cần lời", `Services/AutoLyrics/AutoKaraokeFlow.swift`) ra
+  đời SAU đợt sửa throttle 09-17 nên KHÔNG được áp cùng pattern — `ContentView` giữ nó TRỰC TIẾP qua
+  `@StateObject` (không qua proxy như `BeatSepProxy`/`AdvancedKaraokeProxy`), và `phase` được set
+  thẳng theo MỖI tick tiến độ ASR từ helper Python (`asr.$phase.values`), không throttle.
+- **Sửa**: thêm throttle 0,3s (CÙNG hằng số với `BeatSepProxy`/`AdvancedKaraokeProxy`) ngay tại nhánh
+  `.running(let p)` trong `AutoKaraokeFlow.runAll`, dùng mốc thời gian riêng
+  (`lastRecognizingPublish`), reset về `.distantPast` mỗi lần `start()` (chặng đầu luôn hiện ngay).
+  KHÔNG đụng `ContentView.swift`/`AutoLyricsController.swift`/tốc độ ASR thật — chỉ giảm tần số
+  `AutoKaraokeFlow.phase` (nguồn `ContentView` quan sát) được cập nhật.
+- **Đo lại (build thật, `dist/KaraokeMaker.app`, project thật `Gánh Mẹ...kbproj` có audio thật)**:
+  lúc đang "Đang nhận dạng lời…" (helper Python thật đang chạy, xác nhận bằng `ps` + MPS device):
+  Swift process 0–10% CPU (trước: 190–280%). Bấm Huỷ, đo 10s sau: 0,0–0,7% CPU liên tục (trước:
+  198–280% không giảm). Không rơi vào lớp lỗi "CÓ VOCAL/BEAT STEM…" ghi ở `KNOWN_ISSUES.md`
+  (2026-09-19, chưa rõ cơ chế) — đây là lỗi RIÊNG, khác cơ chế, đã xác định rõ gốc + build lại xác
+  nhận hết hẳn qua đo trực tiếp `sample`, không suy đoán.
+- Build OK (`swift build -c release`, chỉ warning cũ không liên quan). File đổi: CHỈ
+  `Services/AutoLyrics/AutoKaraokeFlow.swift` (thêm 1 field + throttle 5 dòng trong `runAll`).
+
 ### 2026-09-28 (tối) — LỜI MẪU ĐÃ DUYỆT 185/185 + CHẤM LẠI (lab, app KHÔNG đổi)
 - Lỗi thật sau khi làm sạch lời mẫu: DEV A 6,90 % / E 7,09 %; TEST A 6,64 % / E 6,15 %. E không còn hơn A trên DEV → mốc nghiên cứu = A.
 - Bản chụp sạch: `~/viet_lyrics_lab/snapshots/qwen_whisper_selector_E_cleaned/`. Bộ thử mới 2026: chưa có bài (chờ user).

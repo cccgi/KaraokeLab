@@ -112,6 +112,13 @@ final class AutoKaraokeFlow: ObservableObject {
     private var task: Task<Void, Never>?
     private var token = UUID()
     private var owner: UUID?
+    /// (2026-09-29) `asr.$phase` phát `.running(progress)` NHIỀU LẦN/GIÂY lúc helper đang chạy — y hệt lý do
+    /// `BeatSepProxy`/`AdvancedKaraokeProxy` throttle tiến độ (xem comment ở `ContentView.swift`), nhưng
+    /// `AutoKaraokeFlow` lại được `ContentView` giữ TRỰC TIẾP qua `@StateObject` (không qua proxy) → mỗi lần
+    /// `phase` đổi, dù chỉ % nhỏ, kéo `ContentView.body` (3 cột + timeline) dựng lại → CPU cao liên tục lúc
+    /// "Đang nhận dạng lời…". Throttle riêng nhánh `.recognizing` xuống tối đa vài lần/giây, KHÔNG đụng tốc độ/
+    /// logic ASR thật — chặng đầu tiên luôn hiện ngay (mốc `.distantPast`).
+    private var lastRecognizingPublish = Date.distantPast
 
     init(service: LyricTranscriptionService = QwenHelperTranscriptionService(), gate: AutoLyricsJobGate = .shared) {
         asr = AutoLyricsController(service: service, gate: gate)
@@ -132,6 +139,7 @@ final class AutoKaraokeFlow: ObservableObject {
         guard !isRunning, let hooks else { return }
         asr.discard()
         draft = nil; draftText = nil
+        lastRecognizingPublish = .distantPast
         token = UUID(); owner = hooks.projectSession()
         let t = token
         task = Task { [weak self] in await self?.runAll(token: t) }
@@ -194,7 +202,12 @@ final class AutoKaraokeFlow: ObservableObject {
         loop: for await ph in asr.$phase.values {
             if !alive(t) { break loop }
             switch ph {
-            case .running(let p): everRunning = true; phase = .recognizing(p)
+            case .running(let p):
+                everRunning = true
+                let now = Date()
+                guard now.timeIntervalSince(lastRecognizingPublish) >= 0.3 else { break }
+                lastRecognizingPublish = now
+                phase = .recognizing(p)
             case .review: result = asr.draft; break loop
             case .failed(let m): failure = m; break loop
             case .needsVocalStem: failure = AutoLyricsError.needsVocalStem.localizedDescription; break loop
