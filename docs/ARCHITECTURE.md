@@ -11,8 +11,15 @@ Không dùng Combine nhiều (vài `@Published` sink). Có Swift Concurrency (`T
   đang mở editor. Đa project = `ProjectTabs` (tab bar tự vẽ). Mỗi tab có `ProjectStore` riêng;
   `PlaybackController` **dùng chung 1 instance** cho mọi tab.
 - `ContentView`: editor thật. 3 cột (`leftPanel` / `centerColumn` preview / `inspectorColumn`)
-  trong `HSplitView`, dưới là `syncBar` + `timelineArea` trong `VSplitView`. File ~2900 dòng,
-  chứa hầu hết handler nghiệp vụ (`timelineOverlayMove`, `seekTo`, `exportTransparentVideo`, …).
+  trong `HSplitView`, dưới là `syncBar` + `timelineArea` trong `VSplitView`. (2026-09-29) Tách khỏi
+  1 file ~4700 dòng thành `ContentView.swift` (struct + `@State`/`@StateObject` + `body`/
+  `mainLayout` — property lưu trữ BẮT BUỘC nằm ở đây, Swift extension không khai báo được) +
+  13 file `ContentView+<Khu>.swift` theo đúng khu UI (`+Toolbar`, `+CreateKaraoke`, `+Inspector`,
+  `+PreviewCenter`, `+ColorPanel`, `+Visualizer`, `+OverlaysAndMedia`, `+TimelineChrome`,
+  `+ExportPanel`, `+Commands`, `+KeyboardAndTimeline`, `+AudioAndLyrics`, `+ExportActions`,
+  `+Proxies`) — THUẦN di chuyển code (`extension ContentView { … }`), không đổi 1 dòng logic nào;
+  `private` cross-file được nới thành mặc định `internal` (cùng module, không lộ ra ngoài app).
+  Chứa hầu hết handler nghiệp vụ (`timelineOverlayMove`, `seekTo`, `exportTransparentVideo`, …).
 
 ## State / ownership
 - `ProjectStore` (`@MainActor ObservableObject`): `@Published project: KaraokeProject`,

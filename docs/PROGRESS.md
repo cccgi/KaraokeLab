@@ -1,6 +1,44 @@
 # PROGRESS
 
 ## CURRENT MILESTONE
+### 2026-09-29 (tối) — TÁCH ContentView.swift (~4700 dòng) THÀNH 14 FILE THEO KHU UI (audit, KHÔNG đổi logic)
+Theo yêu cầu tiếp tục audit — `ContentView.swift` là "God struct" duy nhất chứa gần như toàn bộ
+UI + handler nghiệp vụ của editor, > 4700 dòng, đã được audit trước (kiến trúc sư cũ) ghi nhận là
+vấn đề (§5.2 `ARCHITECTURAL_HANDOVER_AND_AUDIT.md`).
+
+- **Cách làm**: THUẦN di chuyển code bằng `extension ContentView { … }` ở 13 file mới, theo đúng
+  ranh giới `// MARK:` đã có sẵn trong file gốc (nhóm theo khu UI thật của app — Toolbar, panel
+  "Tạo Karaoke", Inspector, cột giữa Preview, bảng màu, sóng nhạc, lớp đè + kho media, khung
+  Timeline, panel Xuất, hệ lệnh M-A, phím tắt + hành động timeline, Audio + nhập lời, hành động
+  Xuất, 2 proxy throttle) — KHÔNG đổi 1 dòng logic, KHÔNG đổi tên hàm/biến, KHÔNG đổi thứ tự thực
+  thi. `ContentView.swift` giờ chỉ còn struct + toàn bộ `@State`/`@StateObject`/`@ObservedObject`
+  (Swift KHÔNG cho khai báo stored property trong extension — bắt buộc ở lại đây) + `body`/
+  `mainLayout` + vài helper gốc — 421 dòng (từ 4719).
+- **Vướng thật gặp phải + cách sửa** (không phải mọi thứ trôi chảy ngay):
+  1. `@ViewBuilder` gắn trước 1 khai báo bị đứt lìa khỏi property lúc cắt theo mốc dòng — phải dò
+     lại từng ranh giới file, gắn lại đúng chỗ.
+  2. 16 `@State` (rải ở 3 khu: bảng màu, tạo karaoke, lớp đè/media) vô tình lọt vào file extension
+     — Swift chặn ngay lúc build ("extension không được có stored property"). Dời cả 16 về lại
+     struct chính; enum lồng nhau dùng làm KIỂU cho các `@State` đó (`LeftPanelTab`,
+     `AudioInputMode`) phải nới từ `private` lên mặc định (module-visible) vì kiểu và biến giờ ở 2
+     file khác nhau.
+  3. Toàn bộ thành viên `private` của struct gốc — HẦU HẾT dùng chéo giữa nhiều khu (đúng lý do nó
+     từng phải nằm chung 1 file) — build ra 1268 lỗi "inaccessible due to private protection
+     level" ngay sau lần tách đầu. Sửa bằng 1 lệnh `sed` nới TOÀN BỘ `private` (trên khai báo
+     property/hàm/kiểu, không đụng comment) thành mặc định `internal` — an toàn tuyệt đối vì tất
+     cả 14 file đều CÙNG 1 module app (không phải thư viện, không có API công khai cần giữ kín);
+     `internal` vẫn không lộ ra NGOÀI app.
+  4. File `ContentView+ExportActions.swift` bị thừa 1 dấu `}` (lẫn dấu đóng struct gốc của bản cũ
+     + dấu đóng extension mới) — sửa tay.
+- **Xác nhận đã build sạch + CHẠY ĐÚNG (không suy đoán)**: `swift build -c release` (whole-module)
+  0 lỗi, cảnh báo giữ nguyên y hệt trước khi tách (không thêm/mất cảnh báo nào). Đóng gói
+  `pack-local.sh`, mở app thật, mở lại đúng project đã dùng để đo lag hôm nay (`Gánh Mẹ...kbproj`,
+  có stem) — toàn bộ UI (toolbar/panel trái/inspector/preview/timeline) hiện ĐÚNG như trước, luồng
+  "Không cần lời" chạy thật (`Đang nhận dạng lời… 1/15`) cho CPU 0–0,7% (2 lần sửa lag hôm nay vẫn
+  còn nguyên vẹn sau khi tách file).
+- File đổi: `ContentView.swift` (M) + 13 file `ContentView+*.swift` (mới) + `docs/ARCHITECTURE.md`
+  (cập nhật bản đồ file).
+
 ### 2026-09-29 (chiều) — DỌN CẢNH BÁO SWIFT 6 + XÁC NHẬN CŨ "CÓ STEM = LAG" ĐÃ HẾT (audit, app KHÔNG đổi hành vi)
 Tiếp đợt audit sau khi bàn giao. Không đụng file cấm (danh sách ở `CLAUDE.md`).
 
