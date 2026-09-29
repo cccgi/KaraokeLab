@@ -1,0 +1,4 @@
+module MDXOnnx {
+    header "mdx_ort.h"
+    export *
+}

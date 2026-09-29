@@ -1,0 +1,52 @@
+{
+  "songs": [
+    {
+      "id": "dbtb",
+      "name": "Dạo bước tiểu băng",
+      "vocal": "dbtb-vocal.wav",
+      "lyrics": "dbtb-lyrics.txt",
+      "mix": "/Users/khoile/Downloads/dạo bước tiểu băng.wav",
+      "baselineLines": 45
+    },
+    {
+      "id": "dnt",
+      "name": "Đừng Như Thói Quen",
+      "vocal": "dnt-vocal.wav",
+      "lyrics": "dnt-lyrics.txt",
+      "mix": "/Users/khoile/Downloads/LANDR-Đừng Như Thói Quen - F47-Warm-Medium.wav",
+      "baselineLines": 51
+    },
+    {
+      "id": "ttt",
+      "name": "Tóc tựa tuyết",
+      "vocal": "ttt-vocal.wav",
+      "lyrics": "ttt-lyrics.txt",
+      "mix": "/Users/khoile/Downloads/toc tua tuyet.wav",
+      "baselineLines": 48
+    },
+    {
+      "id": "egm",
+      "name": "Em gái mưa",
+      "vocal": "egm-vocal.wav",
+      "lyrics": "egm-lyrics.txt",
+      "mix": "/Users/khoile/Downloads/Em gái mưa.wav",
+      "baselineLines": 35
+    },
+    {
+      "id": "kst",
+      "name": "Kẻ say tình",
+      "vocal": "kst-vocal.wav",
+      "lyrics": "kst-lyrics.txt",
+      "mix": "/Users/khoile/Downloads/kẻ say tình tieu bang.wav",
+      "baselineLines": 39
+    },
+    {
+      "id": "ndshp",
+      "name": "Người dưng sau hạnh phúc",
+      "vocal": "ndshp-vocal.wav",
+      "lyrics": "ndshp-lyrics.txt",
+      "mix": "/Users/khoile/Downloads/Người dung sau hanh phuc.wav",
+      "baselineLines": 38
+    }
+  ]
+}

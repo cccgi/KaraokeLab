@@ -1,0 +1,19 @@
+.DS_Store
+/.build
+/.swiftpm
+/.ortbuild
+/Packages
+Package.resolved
+xcuserdata/
+DerivedData/
+*.xcodeproj/project.xcworkspace/xcuserdata/
+/dist
+# Bộ test hồi quy nội bộ (--regress-test) — file âm thanh nặng, không đưa lên git.
+# manifest.json + *.txt (lời) vẫn giữ lại vì nhẹ và là tài liệu tham chiếu hữu ích.
+/.regression/*.wav
+dist-release/
+# Mô hình ONNX nặng (64-303MB, vượt trần 100MB của GitHub) — không đưa lên git.
+# Lấy lại từ gói bàn giao (5_KaraokeApp_source_with_git.zip đi kèm models riêng, hoặc
+# tải lại UVR-MDX-NET-Voc_FT / mdx23c-vocinst / mms-aligner theo README) rồi chép đúng
+# đường dẫn dưới đây trước khi `swift build` — Package.swift cần file THẬT tồn tại trên đĩa.
+/Sources/KaraokeMaker/Resources/*.onnx
