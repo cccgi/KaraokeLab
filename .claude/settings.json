@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" && if GIT_TERMINAL_PROMPT=0 git pull --ff-only --quiet 2>&1; then echo \"[git] Đã lấy bản mới nhất từ GitHub ($(git log -1 --format='%h %s'))\"; else echo \"[git] Tự pull KHÔNG thành công — Claude: xử lý theo mục Git trong CLAUDE.md trước khi làm việc\"; fi",
+            "timeout": 60,
+            "statusMessage": "Đang lấy bản mới nhất từ GitHub..."
+          }
+        ]
+      }
+    ]
+  }
+}

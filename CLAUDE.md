@@ -51,6 +51,16 @@ sửa hỏng, user cấm):
    xong lô nào build + đưa lệnh test + liệt kê "phần tiếp theo". Không "làm 1 bước hỏi 1 bước".
 9. Xong việc: cập nhật `docs/PROGRESS.md` + `docs/FEATURE_MATRIX.md` (+ `KNOWN_ISSUES.md` nếu cần).
 
+## Git — đồng bộ 2 máy (từ 2026-09-29, user đã đồng ý)
+- Repo app: https://github.com/cccgi/KaraokeLab — **CÔNG KHAI**. Lab `~/viet_lyrics_lab` có repo **RIÊNG TƯ** riêng
+  (khoilephoto/viet-lyrics-lab) — KHÔNG bao giờ đưa lab, lời bài hát, audio, model, `.build*` lên repo app.
+- Mở phiên: hook `.claude/settings.json` tự `git pull --ff-only`. Nếu hook báo "KHÔNG thành công" → trước khi làm việc:
+  `git status`; có thay đổi dở → commit; lệch nhánh → `git pull --rebase`, gỡ xung đột (giữ thay đổi của CẢ HAI người), báo user.
+- Xong MỖI lô việc (build OK / test xong) → TỰ `git add -A && git commit -m "<mô tả ngắn>" && git push`, không cần hỏi lại.
+  Push bị từ chối vì người kia vừa đẩy → `git pull --rebase` rồi push lại. Trước commit xem `git status`: không file > 50 MB.
+- Push bị chặn (thiếu đăng nhập / hệ thống an toàn) → đưa user ĐÚNG 1 lệnh để bấm Run.
+- Hai người tránh sửa cùng 1 file cùng lúc; ai làm phần nào thì ghi vào `docs/PROGRESS.md`.
+
 ## Bản đồ nhanh
 - Vỏ app: `Views/RootView.swift` (Home ⇄ editor theo tab), `HomeView`, `Services/ProjectTabs.swift`, `ProjectLibrary`.
 - Editor: `Views/ContentView.swift` (~2900 dòng — 3 cột + syncBar + timeline + toolbar; nhiều `timeline*`/`overlay*` handler ở đây).
