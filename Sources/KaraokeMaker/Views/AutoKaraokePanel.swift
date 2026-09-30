@@ -18,17 +18,17 @@ struct AutoKaraokePanel: View {
     private enum Row: Int, CaseIterable { case analyze, recognize, check, time }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: Theme.Space.l) {
             Text(L("Không cần nhập lời: máy nghe bài hát, viết ra lời, rồi tự canh giờ thành karaoke."))
-                .font(.caption2).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                .font(Theme.Typo.helper).foregroundStyle(Theme.inkFaint).fixedSize(horizontal: false, vertical: true)
             switch flow.phase {
             case .idle:
                 Button { onStart() } label: { Label(L("Bắt đầu tạo Karaoke"), systemImage: "wand.and.stars") }
-                    .buttonStyle(.borderedProminent).tint(Theme.accent).controlSize(.large)
+                    .buttonStyle(.kmPrimaryLarge)
             case .analyzing, .recognizing, .timing, .done:
                 progressRows
                 if flow.isRunning {
-                    Button(L("Huỷ"), action: onCancel).controlSize(.small)
+                    Button(L("Huỷ"), action: onCancel).buttonStyle(.kmSecondarySmall)
                 }
             case .failedAnalysis(let m):
                 failure(title: L("Chưa phân tích được bài hát"), message: m, timing: false)
@@ -86,23 +86,29 @@ struct AutoKaraokePanel: View {
     }
 
     @ViewBuilder private var progressRows: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        // Danh sách chặng gọn: icon trạng thái · tên chặng · thời gian đã chạy · thanh tiến độ thật (DESIGN_SYSTEM §15).
+        VStack(alignment: .leading, spacing: Theme.Space.m) {
             ForEach(Row.allCases, id: \.rawValue) { row in
                 let st = state(of: row)
-                VStack(alignment: .leading, spacing: 3) {
-                    HStack(spacing: 8) {
-                        if st.done { Image(systemName: "checkmark.circle.fill").foregroundStyle(.green) }
-                        else if st.current { ProgressView().controlSize(.small) }
-                        else { Image(systemName: "circle").foregroundStyle(.secondary.opacity(0.5)) }
+                VStack(alignment: .leading, spacing: Theme.Space.xs) {
+                    HStack(spacing: Theme.Space.m) {
+                        Group {
+                            if st.done { Image(systemName: "checkmark.circle.fill").foregroundStyle(Theme.success) }
+                            else if st.current { ProgressView().controlSize(.small) }
+                            else { Image(systemName: "circle").foregroundStyle(Theme.inkDisabled) }
+                        }
+                        .frame(width: 16)
                         Text(st.done ? doneTitle(for: row) : (st.current ? title(for: row) : pendingTitle(row)))
-                            .font(.caption).foregroundStyle(st.done ? Color.green : (st.current ? Color.primary : Color.secondary))
+                            .font(Theme.Typo.label).foregroundStyle(st.done ? Theme.inkDim : (st.current ? Theme.ink : Theme.inkFaint))
+                        Spacer(minLength: 0)
+                        if st.current { ElapsedLabel() }
                     }
-                    if st.current, let f = fraction(for: row) { ProgressView(value: max(0, min(1, f))) }
+                    if st.current, let f = fraction(for: row) { ProgressView(value: max(0, min(1, f))).controlSize(.small) }
                 }
             }
             if case .done(let lines, let unc) = flow.phase {
                 Text(String(format: L("Hoàn tất — %d dòng đã có mốc giờ."), lines) + (unc > 0 ? " " + String(format: L("%d từ máy chưa chắc, xem ở tab “Sửa lời”."), unc) : ""))
-                    .font(.caption).foregroundColor(Theme.accent).fixedSize(horizontal: false, vertical: true)
+                    .font(Theme.Typo.label).foregroundColor(Theme.ink).fixedSize(horizontal: false, vertical: true)
             }
         }
     }
@@ -129,26 +135,26 @@ struct AutoKaraokePanel: View {
     // MARK: - Lỗi
 
     @ViewBuilder private func failure(title: String, message: String, timing: Bool) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Label(title, systemImage: "exclamationmark.triangle.fill").font(.callout.weight(.semibold)).foregroundColor(.orange)
-            Text(message).font(.caption2).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+        VStack(alignment: .leading, spacing: Theme.Space.m) {
+            Label(title, systemImage: "exclamationmark.triangle.fill").font(Theme.Typo.labelStrong).foregroundColor(Theme.warning)
+            Text(message).font(Theme.Typo.helper).foregroundStyle(Theme.inkDim).fixedSize(horizontal: false, vertical: true)
             if timing {
                 Text(L("Lời đã nhận dạng được giữ lại — không cần nhận dạng lại."))
-                    .font(.caption2).foregroundStyle(.secondary)
-                HStack(spacing: 8) {
-                    Button(L("Thử lại canh giờ"), action: onRetryTiming).buttonStyle(.borderedProminent).tint(Theme.accent).controlSize(.small)
-                    Button(showDraft ? L("Ẩn lời đã nhận dạng") : L("Xem lời đã nhận dạng")) { showDraft.toggle() }.controlSize(.small)
+                    .font(Theme.Typo.helper).foregroundStyle(Theme.inkFaint)
+                HStack(spacing: Theme.Space.s) {
+                    Button(L("Thử lại canh giờ"), action: onRetryTiming).buttonStyle(.kmPrimary)
+                    Button(showDraft ? L("Ẩn lời đã nhận dạng") : L("Xem lời đã nhận dạng")) { showDraft.toggle() }.buttonStyle(.kmSecondarySmall)
                 }
-                Button(L("Chuyển sang nhập lời thủ công")) { onManual(flow.draftText) }.controlSize(.small)
+                Button(L("Chuyển sang nhập lời thủ công")) { onManual(flow.draftText) }.buttonStyle(.kmSecondarySmall)
                 if showDraft, let t = flow.draftText {
-                    ScrollView { Text(t).font(.system(size: 12)).textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading).padding(6) }
+                    ScrollView { Text(t).font(Theme.Typo.body).textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading).padding(Theme.Space.s) }
                         .frame(maxHeight: 140)
-                        .background(RoundedRectangle(cornerRadius: 6).fill(Color.white.opacity(0.04)))
+                        .background(RoundedRectangle(cornerRadius: Theme.Radius.sm).fill(Theme.elevated.opacity(0.6)))
                 }
             } else {
-                HStack(spacing: 8) {
-                    Button(L("Thử lại"), action: onStart).buttonStyle(.borderedProminent).tint(Theme.accent).controlSize(.small)
-                    Button(L("Nhập lời thủ công")) { onManual(nil) }.controlSize(.small)
+                HStack(spacing: Theme.Space.s) {
+                    Button(L("Thử lại"), action: onStart).buttonStyle(.kmPrimary)
+                    Button(L("Nhập lời thủ công")) { onManual(nil) }.buttonStyle(.kmSecondarySmall)
                 }
             }
         }

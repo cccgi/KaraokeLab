@@ -115,6 +115,8 @@ private let enTable: [String: String] = [
     "Mở": "Open",
     "Lưu thành": "Save as",
     "Có thay đổi chưa lưu": "Unsaved changes",
+    "Đã chỉnh màu": "Color adjusted",
+    "Bấm đúp để về 0": "Double-click to reset to 0",
     "Chọn file nhạc, rồi dán lời hoặc để máy tự tạo lời.": "Choose a music file, then paste lyrics or let the app write them.",
     "Hiện / ẩn vùng an toàn của khung hình": "Show / hide the frame's safe area",
     "Dừng (Space)": "Pause (Space)",

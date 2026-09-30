@@ -400,24 +400,24 @@ extension ContentView {
             if aiAudioOK {
                 HStack(spacing: 8) {
                     Image(systemName: beatSepProxy.usingUserStems ? "waveform.path.badge.plus" : "music.note")
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Theme.inkDim)
                     Text(beatSepProxy.usingUserStems
                          ? L("Beat + Vocal của bạn")
                          : (playback.loadedURL?.lastPathComponent ?? store.project.audio?.fileName ?? "—"))
-                        .font(.caption).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
+                        .font(Theme.Typo.label).foregroundStyle(Theme.ink).lineLimit(1).truncationMode(.middle)
                     Spacer()
-                    Button(L("Đổi")) { resetAudioInput() }.controlSize(.small)
+                    Button(L("Đổi")) { resetAudioInput() }.buttonStyle(.kmSecondarySmall)
                 }
             } else if store.project.audio != nil {
                 HStack(spacing: 6) {
-                    Image(systemName: "exclamationmark.triangle").foregroundStyle(.orange)
-                    Text(L("Không tìm thấy file nhạc")).font(.caption).foregroundStyle(.orange)
+                    Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(Theme.warning)
+                    Text(L("Không tìm thấy file nhạc")).font(Theme.Typo.label).foregroundStyle(Theme.warning)
                     Spacer()
-                    Button(L("Chọn lại…")) { importAudio() }.controlSize(.small)
+                    Button(L("Chọn lại…")) { importAudio() }.buttonStyle(.kmSecondarySmall)
                 }
             } else {
                 Text(L("Bạn có bài nhạc, hay có sẵn Beat + Vocal riêng?"))
-                    .font(.caption2).foregroundStyle(.secondary)
+                    .font(Theme.Typo.helper).foregroundStyle(Theme.inkFaint)
                 Picker("", selection: $audioInputMode) {
                     ForEach(AudioInputMode.allCases) { Text(L($0.rawValue)).tag($0) }
                 }
@@ -435,18 +435,18 @@ extension ContentView {
     @ViewBuilder
     var wholeAudioInput: some View {
         VStack(spacing: 8) {
-            Image(systemName: "square.and.arrow.down").font(.title2).foregroundStyle(.secondary)
+            Image(systemName: "square.and.arrow.down").font(.system(size: 20)).foregroundStyle(Theme.inkFaint)
             Button(L("Chọn file nhạc (MP3 / WAV)…")) { importAudio() }
                 .buttonStyle(.kmPrimary)
             Text(L("…hoặc kéo file nhạc từ Finder thả vào đây."))
-                .font(.caption2).foregroundStyle(.secondary)
+                .font(Theme.Typo.helper).foregroundStyle(Theme.inkFaint)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 18)
-        .background(RoundedRectangle(cornerRadius: 8)
+        .padding(.vertical, Theme.Space.xl)
+        .background(RoundedRectangle(cornerRadius: Theme.Radius.md)
             .fill(audioDropTargeted ? Theme.accent.opacity(0.12) : Color.white.opacity(0.03)))
-        .overlay(RoundedRectangle(cornerRadius: 8)
-            .strokeBorder(style: StrokeStyle(lineWidth: 1.5, dash: [5, 4]))
+        .overlay(RoundedRectangle(cornerRadius: Theme.Radius.md)
+            .strokeBorder(style: StrokeStyle(lineWidth: 1, dash: [5, 4]))
             .foregroundStyle(audioDropTargeted ? Theme.accent : Theme.strokeStrong))
         .onDrop(of: ["public.file-url"], isTargeted: $audioDropTargeted) { handleAudioDrop($0) }
     }
@@ -487,7 +487,7 @@ extension ContentView {
             VStack(alignment: .leading, spacing: 2) {
                 Text(L(title)).font(Theme.Typo.labelStrong)
                 Text(url.wrappedValue?.lastPathComponent ?? L("kéo file vào, hoặc bấm Chọn"))
-                    .font(.caption2).foregroundStyle(.secondary)
+                    .font(Theme.Typo.helper).foregroundStyle(Theme.inkFaint)
                     .lineLimit(1).truncationMode(.middle)
             }
             Spacer()
@@ -496,12 +496,12 @@ extension ContentView {
             }
             Button(L("Chọn…")) {
                 if let u = FilePanels.chooseAudioToImport() { url.wrappedValue = u }
-            }.controlSize(.small).disabled(beatSepProxy.usingUserStems)
+            }.buttonStyle(.kmSecondarySmall).disabled(beatSepProxy.usingUserStems)
         }
-        .padding(8)
-        .background(RoundedRectangle(cornerRadius: 6)
+        .padding(Theme.Space.m)
+        .background(RoundedRectangle(cornerRadius: Theme.Radius.md)
             .fill(targeted.wrappedValue ? Theme.accent.opacity(0.12) : Color.white.opacity(0.03)))
-        .overlay(RoundedRectangle(cornerRadius: 6)
+        .overlay(RoundedRectangle(cornerRadius: Theme.Radius.md)
             .strokeBorder(style: StrokeStyle(lineWidth: 1, dash: [4, 3]))
             .foregroundStyle(targeted.wrappedValue ? Theme.accent : Theme.stroke))
         .onDrop(of: ["public.file-url"], isTargeted: targeted) { handleStemDrop($0, into: slot) }
@@ -595,7 +595,7 @@ extension ContentView {
             createModeChooser
         } else {
             Button { createMode = nil; autoKaraoke.reset() } label: { Label(L("Đổi cách tạo"), systemImage: "chevron.left") }
-                .controlSize(.small).disabled(autoKaraoke.isRunning)
+                .buttonStyle(.kmSecondarySmall).disabled(autoKaraoke.isRunning)
             if createMode == .hasLyrics {
                 forcedAlignStep
             } else {
@@ -610,43 +610,34 @@ extension ContentView {
         }
     }
 
+    /// 2 đường NGANG NHAU → 2 thẻ cùng kiểu (DESIGN_SYSTEM §15), rồi hội tụ về cùng editor.
     var createModeChooser: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(L("Bạn muốn tạo Karaoke theo cách nào?")).font(.caption2).foregroundStyle(.secondary)
-            // Nút 1 dòng (nút hệ thống) + mô tả ngay dưới — không nhồi 2 dòng vào nút (bị cắt chữ).
-            Button { createMode = .hasLyrics } label: { choiceTitle(icon: "text.alignleft", L("Tôi có lời bài hát")) }
-                .buttonStyle(.bordered).controlSize(.large)
-            Text(L("Dán hoặc nhập lời — máy tự canh giờ.")).font(.caption2).foregroundStyle(.secondary)
-                .padding(.bottom, 8)
-            Button { createMode = .noLyrics; startAutoKaraoke() } label: { choiceTitle(icon: "wand.and.stars", L("Không cần lời — Tự động tạo Karaoke")) }
-                .buttonStyle(.borderedProminent).tint(Theme.accent).controlSize(.large)
-            Text(L("Máy tự nghe, viết lời rồi canh giờ.")).font(.caption2).foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: Theme.Space.m) {
+            Text(L("Bạn muốn tạo Karaoke theo cách nào?")).font(Theme.Typo.helper).foregroundStyle(Theme.inkFaint)
+            KMChoiceCard(icon: "text.alignleft", title: L("Tôi có lời bài hát"),
+                         subtitle: L("Dán hoặc nhập lời — máy tự canh giờ.")) { createMode = .hasLyrics }
+            KMChoiceCard(icon: "wand.and.stars", title: L("Không cần lời — Tự động tạo Karaoke"),
+                         subtitle: L("Máy tự nghe, viết lời rồi canh giờ.")) { createMode = .noLyrics; startAutoKaraoke() }
         }
-    }
-
-    func choiceTitle(icon: String, _ title: String) -> some View {
-        HStack(spacing: 8) {
-            Image(systemName: icon)
-            Text(title).font(.system(size: 13, weight: .semibold)).lineLimit(1).minimumScaleFactor(0.75)
-            Spacer(minLength: 0)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     @ViewBuilder
     var forcedAlignStep: some View {
         Text(L("Dán lời theo thứ tự hát, mỗi câu 1 dòng. Cách các đoạn (phiên khúc, điệp khúc, đoạn cầu…) bằng MỘT dòng trống. Đoạn nào hát lại chỉ cần viết MỘT lần — máy tự tìm và nhân bản cho đủ."))
-            .font(.caption2).foregroundStyle(.secondary)
+            .font(Theme.Typo.helper).foregroundStyle(Theme.inkFaint)
             .fixedSize(horizontal: false, vertical: true)
 
         TextEditor(text: $alignLyricsInput)
-            .font(.body).frame(minHeight: 190, maxHeight: 260)
-            .overlay(RoundedRectangle(cornerRadius: 6).stroke(Theme.strokeStrong))
+            .font(.system(size: 13)).frame(minHeight: 190, maxHeight: 260)
+            .scrollContentBackground(.hidden)
+            .padding(Theme.Space.xs)
+            .background(RoundedRectangle(cornerRadius: Theme.Radius.sm).fill(Theme.elevated.opacity(0.5)))
+            .overlay(RoundedRectangle(cornerRadius: Theme.Radius.sm).stroke(Theme.strokeStrong))
 
-        HStack(spacing: 8) {
+        HStack(spacing: Theme.Space.s) {
             Button(L("Dán")) {
                 if let s = NSPasteboard.general.string(forType: .string) { alignLyricsInput = s }
-            }.controlSize(.small)
+            }.buttonStyle(.kmSecondarySmall)
             if !alignLyricsInput.isEmpty {
                 Button(L("Xoá")) { alignLyricsInput = "" }.controlSize(.small).buttonStyle(.link)
             }
@@ -660,7 +651,7 @@ extension ContentView {
             } label: {
                 Label(advancedProxy.isBusy ? L("Đang xử lý…") : L("Tạo nhanh Karaoke"), systemImage: "bolt.fill")
             }
-            .buttonStyle(.borderedProminent).tint(Theme.accent)
+            .buttonStyle(.kmPrimary)
             .disabled(advancedProxy.isBusy || noLyrics)
 
             Button {
@@ -668,11 +659,11 @@ extension ContentView {
             } label: {
                 Label(L("Tạo Karaoke Chất Lượng"), systemImage: "sparkles")
             }
-            .buttonStyle(.borderedProminent).tint(Theme.accent)
+            .buttonStyle(.kmSecondary)
             .disabled(advancedProxy.isBusy || noLyrics)
         }
         Text(L("“Chất lượng” tách nhạc sạch hơn nhưng lâu hơn nhiều."))
-            .font(.caption2).foregroundStyle(.secondary)
+            .font(Theme.Typo.helper).foregroundStyle(Theme.inkFaint)
 
         if advancedProxy.phase != .idle {
             VStack(alignment: .leading, spacing: 10) {
@@ -690,14 +681,14 @@ extension ContentView {
 
                 if advancedProxy.phase == .done {
                     if !advancedProxy.resultNote.isEmpty {
-                        Text(advancedProxy.resultNote).font(.caption).foregroundStyle(Theme.accent)
+                        Text(advancedProxy.resultNote).font(Theme.Typo.label).foregroundStyle(Theme.ink)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     Text(L("Đang mở phần “Chỉnh sửa”…"))
-                        .font(.caption2).foregroundStyle(.secondary)
+                        .font(Theme.Typo.helper).foregroundStyle(Theme.inkFaint)
                 }
                 if case .failed(let m) = advancedProxy.phase {
-                    Text(m).font(.caption2).foregroundStyle(.orange)
+                    Label(m, systemImage: "exclamationmark.triangle.fill").font(Theme.Typo.helper).foregroundStyle(Theme.warning)
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
@@ -705,8 +696,8 @@ extension ContentView {
         }
 
         HStack(spacing: 6) {
-            Text(L("Hoặc")).font(.caption).foregroundStyle(.secondary)
-            Button(L("Nhập SRT / ASS…")) { importLyrics() }.controlSize(.small)
+            Text(L("Hoặc")).font(Theme.Typo.helper).foregroundStyle(Theme.inkFaint)
+            Button(L("Nhập SRT / ASS…")) { importLyrics() }.buttonStyle(.kmSecondarySmall)
         }
     }
 
@@ -775,18 +766,21 @@ extension ContentView {
     /// 1 chặng trong bước tạo karaoke: đang chạy = spinner + thanh %, xong = tick xanh.
     @ViewBuilder
     func phaseRow(_ title: String, running: Bool, progress: Double) -> some View {
-        VStack(alignment: .leading, spacing: 3) {
-            HStack(spacing: 8) {
+        VStack(alignment: .leading, spacing: Theme.Space.xs) {
+            HStack(spacing: Theme.Space.m) {
                 if running {
-                    ProgressView().controlSize(.small)
-                    Text(String(format: L("Đang %@…"), L(title).lowercased())).font(.caption).foregroundStyle(.secondary)
+                    ProgressView().controlSize(.small).frame(width: 16)
+                    Text(String(format: L("Đang %@…"), L(title).lowercased())).font(Theme.Typo.label).foregroundStyle(Theme.ink)
+                    Spacer(minLength: 0)
+                    ElapsedLabel()
                 } else {
-                    Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
-                    Text(String(format: L("Đã %@ xong"), L(title).lowercased())).font(.caption).foregroundStyle(.green)
+                    Image(systemName: "checkmark.circle.fill").foregroundStyle(Theme.success).frame(width: 16)
+                    Text(String(format: L("Đã %@ xong"), L(title).lowercased())).font(Theme.Typo.label).foregroundStyle(Theme.inkDim)
+                    Spacer(minLength: 0)
                 }
             }
             if running {
-                ProgressView(value: max(0, min(1, progress)))
+                ProgressView(value: max(0, min(1, progress))).controlSize(.small)
             }
         }
     }

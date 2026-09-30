@@ -12,21 +12,22 @@ extension ContentView {
     func colorBasicPanel(_ b: Binding<ColorAdjust>, sample: (() -> CGImage?)? = nil,
                                  sampleKeySuffix: String = "") -> some View {
         let dirty = !b.wrappedValue.isIdentity
-        VStack(alignment: .leading, spacing: 7) {
-            HStack(spacing: 6) {
-                Text(L("MÀU")).font(.caption2.bold()).foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: Theme.Space.m) {
+            HStack(spacing: Theme.Space.xs) {
+                Text(L("MÀU")).sectionHeaderStyle()
+                if dirty { Circle().fill(Theme.accent).frame(width: 5, height: 5).help(L("Đã chỉnh màu")) }
                 Spacer()
                 Button {
                     bypassColor.toggle()
                     ColorPipeline.bypass = bypassColor
                     OverlayImageStore.flush(); BackgroundImageStore.flush()
                 } label: { Image(systemName: bypassColor ? "eye.slash" : "eye") }
-                    .buttonStyle(.borderless).help(L("Xem Trước / Sau (tạm tắt chỉnh màu)"))
+                    .buttonStyle(KMIconButtonStyle(selected: bypassColor)).help(L("Xem Trước / Sau (tạm tắt chỉnh màu)"))
                 Button { copiedColor = b.wrappedValue } label: { Image(systemName: "doc.on.doc") }
-                    .buttonStyle(.borderless).help(L("Sao chép thông số màu"))
+                    .buttonStyle(.kmIcon).help(L("Sao chép thông số màu"))
                 Button { if let c = copiedColor { b.wrappedValue = c } }
                     label: { Image(systemName: "doc.on.clipboard") }
-                    .buttonStyle(.borderless).disabled(copiedColor == nil).help(L("Dán thông số màu"))
+                    .buttonStyle(.kmIcon).disabled(copiedColor == nil).help(L("Dán thông số màu"))
                 Menu {
                     Button(L("Lưu preset màu…")) {
                         if let name = TextPrompt.run(title: L("Lưu preset màu"),
@@ -49,16 +50,16 @@ extension ContentView {
                 } label: { Image(systemName: "paintpalette") }
                     .menuStyle(.borderlessButton).frame(width: 24).help(L("Preset màu"))
                 Button(L("Về gốc")) { b.wrappedValue = ColorAdjust() }
-                    .controlSize(.mini).disabled(!dirty)
+                    .buttonStyle(.kmSecondarySmall).disabled(!dirty)
             }
             if bypassColor {
-                Text(L("Đang xem BẢN GỐC (chỉnh màu tạm tắt)."))
-                    .font(.caption2).foregroundStyle(.orange)
+                Label(L("Đang xem BẢN GỐC (chỉnh màu tạm tắt)."), systemImage: "eye.slash")
+                    .font(Theme.Typo.helper).foregroundStyle(Theme.warning)
             }
             if let sample {
                 ColorScopes(provider: sample, key: b.wrappedValue.key + sampleKeySuffix)
             }
-            Text(L("ÁNH SÁNG")).font(.system(size: 9, weight: .semibold)).foregroundStyle(.tertiary)
+            Text(L("ÁNH SÁNG")).font(Theme.Typo.badge).kerning(0.4).foregroundStyle(Theme.inkFaint).padding(.top, Theme.Space.xs)
             colorSlider("Phơi sáng", b.exposure)
             colorSlider("Tương phản", b.contrast)
             colorSlider("Sáng nổi", b.highlights)
@@ -66,7 +67,7 @@ extension ContentView {
             colorSlider("Điểm trắng", b.whites)
             colorSlider("Điểm đen", b.blacks)
 
-            Text(L("MÀU SẮC")).font(.system(size: 9, weight: .semibold)).foregroundStyle(.tertiary)
+            Text(L("MÀU SẮC")).font(Theme.Typo.badge).kerning(0.4).foregroundStyle(Theme.inkFaint).padding(.top, Theme.Space.xs)
                 .padding(.top, 2)
             colorSlider("Nhiệt độ", b.temperature, track: [
                 Color(red: 0.20, green: 0.45, blue: 1.00), Color(red: 1.00, green: 0.82, blue: 0.20)])
@@ -76,7 +77,7 @@ extension ContentView {
             colorSlider("Bão hoà", b.saturation, track: [
                 Color(white: 0.55), Color(red: 0.95, green: 0.12, blue: 0.12)])
 
-            Text(L("HIỆU ỨNG")).font(.system(size: 9, weight: .semibold)).foregroundStyle(.tertiary)
+            Text(L("HIỆU ỨNG")).font(Theme.Typo.badge).kerning(0.4).foregroundStyle(Theme.inkFaint).padding(.top, Theme.Space.xs)
                 .padding(.top, 2)
             colorSlider("Tối góc", b.vignette, bipolar: false)
 
@@ -104,22 +105,25 @@ extension ContentView {
     func colorSection<C: View>(_ title: String, _ id: String, active: Bool,
                                        @ViewBuilder _ content: () -> C) -> some View {
         let open = colorExpanded.contains(id)
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: Theme.Space.s) {
             Button {
                 if open { colorExpanded.remove(id) } else { colorExpanded.insert(id) }
             } label: {
-                HStack(spacing: 5) {
+                HStack(spacing: Theme.Space.s) {
                     Image(systemName: open ? "chevron.down" : "chevron.right")
-                        .font(.system(size: 8)).foregroundStyle(.secondary)
-                    Text(L(title)).font(.system(size: 9, weight: .semibold))
-                        .foregroundStyle(active ? Theme.accent : Color.secondary.opacity(0.7))
+                        .font(.system(size: 10, weight: .semibold)).foregroundStyle(Theme.inkFaint).frame(width: 10)
+                    Text(L(title)).font(Theme.Typo.badge).kerning(0.4)
+                        .foregroundStyle(active ? Theme.ink : Theme.inkDim)
+                    // Mục đã chỉnh = chấm nhấn (không chỉ đổi màu chữ).
+                    if active { Circle().fill(Theme.accent).frame(width: 5, height: 5) }
                     Spacer()
-                }.contentShape(Rectangle())
+                }
+                .frame(height: Theme.ControlH.small)
+                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             if open { content() }
         }
-        .padding(.top, 3)
     }
 
     // MARK: C8 · Curve editor
@@ -131,7 +135,7 @@ extension ContentView {
             Picker("", selection: $curveChan) {
                 ForEach(0..<4, id: \.self) { Text(L(chans[$0])).tag($0) }
             }
-            .pickerStyle(.segmented).labelsHidden().controlSize(.mini)
+            .pickerStyle(.segmented).labelsHidden().controlSize(.small)
             ToneCurveGraph(curve: curveBinding(b, curveChan))
                 .frame(height: 130)
             Button(L("Đường cong về thẳng")) {
@@ -142,7 +146,7 @@ extension ContentView {
                 default: b.wrappedValue.master = ToneCurve()
                 }
             }
-            .controlSize(.mini)
+            .buttonStyle(.kmSecondarySmall)
         }
     }
 
@@ -203,7 +207,7 @@ extension ContentView {
                     }
                 }
                 .controlSize(.small)
-                Text(L("LUT 3D .cube (áp trong sRGB).")).font(.caption2).foregroundStyle(.tertiary)
+                Text(L("LUT 3D .cube (áp trong sRGB).")).font(Theme.Typo.helper).foregroundStyle(Theme.inkFaint)
             }
         }
     }
@@ -212,17 +216,19 @@ extension ContentView {
     func colorSlider(_ label: String, _ v: Binding<Double>, bipolar: Bool = true,
                              track: [Color]? = nil) -> some View {
         let lo: Double = bipolar ? -1 : 0
-        return HStack(spacing: 6) {
-            Text(L(label)).font(.caption2).frame(width: 78, alignment: .leading)
+        return HStack(spacing: Theme.Space.s) {
+            Text(L(label)).font(Theme.Typo.label).foregroundStyle(Theme.inkDim).frame(width: 84, alignment: .leading)
+                .lineLimit(1).minimumScaleFactor(0.85)
             if let track {
                 GradientTrackSlider(value: v, range: lo...1, trackColors: track)
             } else {
                 Slider(value: v, in: lo...1)
             }
             Text("\(Int((v.wrappedValue * 100).rounded()))")
-                .font(.caption2.monospacedDigit())
+                .font(Theme.Typo.mono)
                 .frame(width: 30, alignment: .trailing)
-                .foregroundStyle(v.wrappedValue == 0 ? .secondary : .primary)
+                .foregroundStyle(v.wrappedValue == 0 ? Theme.inkFaint : Theme.ink)
+                .help(L("Bấm đúp để về 0"))
                 .onTapGesture(count: 2) { v.wrappedValue = 0 }
         }
     }
@@ -247,7 +253,7 @@ extension ContentView {
                         .padding(.horizontal, 7)
                     Circle()
                         .fill(Color.white)
-                        .frame(width: 13, height: 13)
+                        .frame(width: 12, height: 12)
                         .shadow(color: .black.opacity(0.35), radius: 1.5, y: 0.5)
                         .position(x: x, y: geo.size.height / 2)
                 }
@@ -263,21 +269,22 @@ extension ContentView {
 
     func overlaySlider(_ label: String, _ value: Binding<Double>,
                                _ range: ClosedRange<Double>, _ fmt: String) -> some View {
-        HStack(spacing: 6) {
-            Text(L(label)).font(.caption2).frame(width: 42, alignment: .leading)
-            Slider(value: value, in: range)
+        HStack(spacing: Theme.Space.s) {
+            Text(L(label)).font(Theme.Typo.label).foregroundStyle(Theme.inkDim).frame(width: 52, alignment: .leading)
+                .lineLimit(1).minimumScaleFactor(0.8)
+            Slider(value: value, in: range).controlSize(.small)
             Text(String(format: fmt, value.wrappedValue))
-                .font(.caption2.monospacedDigit()).frame(width: 40, alignment: .trailing)
+                .font(Theme.Typo.mono).foregroundStyle(Theme.inkDim).frame(width: 40, alignment: .trailing)
         }
     }
 
     /// Hàng "Hiện dần / Mờ dần" kiểu thanh trượt + số giây (thay `Stepper` cũ).
     func fadeRow(_ label: String, _ value: Binding<Double>, max maxDur: Double) -> some View {
-        HStack(spacing: 8) {
-            Text(L(label)).font(.caption).frame(width: 66, alignment: .leading)
-            Slider(value: value, in: 0...Swift.max(0.1, maxDur))
+        HStack(spacing: Theme.Space.s) {
+            Text(L(label)).font(Theme.Typo.label).foregroundStyle(Theme.inkDim).frame(width: 66, alignment: .leading)
+            Slider(value: value, in: 0...Swift.max(0.1, maxDur)).controlSize(.small)
             Text(String(format: "%.1fs", value.wrappedValue))
-                .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+                .font(Theme.Typo.mono).foregroundStyle(Theme.inkDim)
                 .frame(width: 40, alignment: .trailing)
         }
     }

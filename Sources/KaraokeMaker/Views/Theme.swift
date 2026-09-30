@@ -248,3 +248,51 @@ extension PanelHeader where Trailing == EmptyView {
         self.init(title: title, icon: icon, iconTint: iconTint, trailing: { EmptyView() })
     }
 }
+
+// MARK: - Thẻ lựa chọn (chỉ cho các lựa chọn NGANG NHAU, ví dụ 2 đường tạo karaoke — DESIGN_SYSTEM §15)
+
+struct KMChoiceCard: View {
+    let icon: String
+    let title: String
+    let subtitle: String
+    var enabled = true
+    let action: () -> Void
+    @State private var hovering = false
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: Theme.Space.l) {
+                Image(systemName: icon).font(.system(size: 16)).foregroundStyle(enabled ? Theme.accent : Theme.inkDisabled)
+                    .frame(width: 22)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title).font(Theme.Typo.title).foregroundStyle(enabled ? Theme.ink : Theme.inkDisabled)
+                        .lineLimit(1).minimumScaleFactor(0.8)
+                    Text(subtitle).font(Theme.Typo.helper).foregroundStyle(Theme.inkFaint).lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right").font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.inkFaint)
+            }
+            .padding(Theme.Space.l)
+            .background(RoundedRectangle(cornerRadius: Theme.Radius.md).fill(hovering && enabled ? Theme.elevated : Theme.panelAlt))
+            .overlay(RoundedRectangle(cornerRadius: Theme.Radius.md).stroke(hovering && enabled ? Theme.strokeStrong : Theme.stroke))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .disabled(!enabled)
+        .onHover { hovering = $0 }
+    }
+}
+
+// MARK: - Đồng hồ "đã chạy" cho 1 chặng tiến trình (tự đếm từ lúc xuất hiện; chỉ view nhỏ này vẽ lại mỗi giây)
+
+struct ElapsedLabel: View {
+    @State private var start = Date()
+    var body: some View {
+        TimelineView(.periodic(from: .now, by: 1)) { ctx in
+            let s = max(0, Int(ctx.date.timeIntervalSince(start)))
+            Text(String(format: "%d:%02d", s / 60, s % 60))
+                .font(Theme.Typo.mono).foregroundStyle(Theme.inkFaint)
+        }
+    }
+}
