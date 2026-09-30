@@ -89,11 +89,18 @@ extension ContentView {
             autoKaraoke.cancel(); createMode = nil; autoUncertain = []
             karaokeInputChanged = false
             classicVizBackup = nil
+            musicInspectorOpen = false
         }
         .onDisappear { autoKaraoke.cancel() }
         #if KM_GUITEST
         .onReceive(NotificationCenter.default.publisher(for: Notification.Name("KMGUITest.toggleKaraoke"))) { _ in toggleKaraoke() }
         .onReceive(NotificationCenter.default.publisher(for: Notification.Name("KMGUITest.togglePlay"))) { _ in playback.togglePlayPause() }
+        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("KMGUITest.exportTo"))) { n in
+            // Xuất thật ra đường dẫn cho sẵn (bỏ qua hộp chọn chỗ lưu) — để chụp màn "Đang xuất".
+            guard let path = n.object as? String else { return }
+            exportAudioChoice = .original
+            startVideoExport(to: URL(fileURLWithPath: path), output: exportOutput, audioForExport: resolvedAudioURL)
+        }
         .onReceive(NotificationCenter.default.publisher(for: Notification.Name("KMGUITest.ui"))) { n in
             // Chụp ảnh giao diện (Scripts/ui-check.sh): chuyển tab trái / mở-đóng bảng Xuất không cần chuột.
             switch n.object as? String ?? "" {
@@ -105,6 +112,15 @@ extension ContentView {
             case "files": leftPanelTab = .files
             case "export": showExportSheet = true
             case "closeexport": showExportSheet = false
+            case "music": select(.music)
+            case "project": select(.none); inspectorProjectTab = true
+            case "style": inspectorProjectTab = false
+            // Ghi THẲNG (không qua perform → không đánh dấu "chưa lưu", không undo) — chỉ để chụp ảnh bản chép.
+            case "demotrim":
+                let len = playback.duration
+                store.project.audioTrimStart = min(20, len / 4); store.project.audioTrimEnd = max(0, len - 30)
+            case "cleartrim": store.project.audioTrimStart = 0; store.project.audioTrimEnd = 0
+            case "shorttrim": store.project.audioTrimStart = 30; store.project.audioTrimEnd = 60   // xuất thử 30 s
             default: break
             }
         }

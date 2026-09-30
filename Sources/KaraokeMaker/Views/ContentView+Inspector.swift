@@ -10,16 +10,171 @@ extension ContentView {
         VStack(spacing: 0) {
             if case .overlay(let id) = editorSelection {
                 overlayInspectorColumn(id)
+            } else if musicInspectorOpen {
+                musicInspectorColumn
             } else {
-                PanelHeader(title: L("Kiểu chữ karaoke"), icon: "textformat")
-
-                StylePanel(currentLineIndex: currentLineIndex, onCommitLineText: commitLyricEdit) {
-                    EmptyView()
+                // Không chọn lớp đè / nhạc → 2 tab: Kiểu chữ (như cũ) | Dự án (khung hình, FPS, nhạc).
+                PanelHeader(title: inspectorProjectTab ? L("Dự án") : L("Kiểu chữ karaoke"),
+                            icon: inspectorProjectTab ? "film" : "textformat") {
+                    Picker("", selection: $inspectorProjectTab) {
+                        Image(systemName: "textformat").help(L("Kiểu chữ karaoke")).tag(false)
+                        Image(systemName: "film").help(L("Dự án")).tag(true)
+                    }
+                    .pickerStyle(.segmented).labelsHidden().fixedSize()
+                }
+                if inspectorProjectTab {
+                    projectInspectorBody
+                } else {
+                    StylePanel(currentLineIndex: currentLineIndex, onCommitLineText: commitLyricEdit) {
+                        EmptyView()
+                    }
                 }
             }
         }
         .frame(maxHeight: .infinity)
         .background(Theme.panel)
+    }
+
+    // MARK: - Inspector Nhạc (cách A — nút "Nhạc" ở đầu làn). Dữ liệu có sẵn từ M-D (PlaybackController + xuất
+    // video đều đã dùng) — trước đây KHÔNG có chỗ chỉnh. Kéo = `store.edit` (gộp 1 undo), đổi xong
+    // `.onChange` ở ContentView tự gọi `syncAudioSettings()` → nghe ngay khi phát.
+
+    /// Độ dài bài (giây) — 0 khi chưa nạp nhạc.
+    var songLength: Double { max(0, playback.duration) }
+
+    var musicInspectorColumn: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            PanelHeader(title: L("Nhạc"), icon: "waveform", iconTint: Theme.accent) {
+                Button(L("Xong")) { select(.none) }.buttonStyle(.kmSecondarySmall)
+            }
+            ScrollView {
+                VStack(alignment: .leading, spacing: Theme.Space.l) {
+                    if store.project.audio == nil || songLength <= 0.1 {
+                        Text(L("Chưa có nhạc. Nhập file nhạc ở tab \"Tạo Karaoke\"."))
+                            .font(Theme.Typo.helper).foregroundStyle(Theme.inkFaint)
+                    } else {
+                        musicInspectorBody
+                    }
+                }
+                .padding(Theme.Space.l)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var musicInspectorBody: some View {
+        let p = store.project
+        let len = songLength
+        let start = min(max(0, p.audioTrimStart), len)
+        let end = p.audioTrimEnd > 0.05 ? min(p.audioTrimEnd, len) : len
+        let songT = min(len, max(0, playback.currentTime - p.karaokeClipStart))
+        HStack(spacing: Theme.Space.s) {
+            Image(systemName: "music.note").foregroundStyle(Theme.inkDim)
+            Text(p.audio?.fileName ?? "").font(Theme.Typo.label).foregroundStyle(Theme.ink)
+                .lineLimit(1).truncationMode(.middle)
+            Spacer(minLength: 0)
+            Text(TimeFormatting.clock(len)).font(Theme.Typo.mono).foregroundStyle(Theme.inkFaint)
+        }
+
+        KMSliderRow(label: L("Âm lượng"), value: p.audioGain * 100, range: 0...100, defaultValue: 100,
+                    format: { "\(Int($0.rounded()))%" }) { v in
+            store.edit(L("Âm lượng nhạc")) { store.project.audioGain = v / 100 }
+        }
+        .disabled(p.audioMuted)
+        Button {
+            store.perform(p.audioMuted ? L("Bật tiếng nhạc") : L("Tắt tiếng nhạc")) { store.project.audioMuted.toggle() }
+        } label: {
+            Label(p.audioMuted ? L("Đang tắt tiếng") : L("Tắt tiếng"),
+                  systemImage: p.audioMuted ? "speaker.slash.fill" : "speaker.wave.2")
+        }
+        .buttonStyle(.kmToggle(p.audioMuted))
+
+        Divider().overlay(Theme.stroke)
+        Text(L("Cắt bài")).sectionHeaderStyle()
+        KMSliderRow(label: L("Bắt đầu"), value: start, range: 0...len, defaultValue: 0, valueWidth: 56,
+                    format: { TimeFormatting.clock($0) }) { v in
+            store.edit(L("Cắt đầu bài")) { store.project.audioTrimStart = min(max(0, v), max(0, end - 1)) }
+        }
+        KMSliderRow(label: L("Kết thúc"), value: end, range: 0...len, defaultValue: len, valueWidth: 56,
+                    format: { TimeFormatting.clock($0) }) { v in
+            store.edit(L("Cắt cuối bài")) {
+                let e = max(v, start + 1)
+                store.project.audioTrimEnd = e >= len - 0.05 ? 0 : e      // 0 = tới hết bài (như model quy ước)
+            }
+        }
+        HStack(spacing: Theme.Space.s) {
+            Button(L("Đầu = vạch đỏ")) {
+                store.perform(L("Cắt đầu bài")) { store.project.audioTrimStart = min(songT, max(0, end - 1)) }
+            }
+            .help(L("Bắt đầu phát / xuất từ vị trí vạch đỏ"))
+            Button(L("Cuối = vạch đỏ")) {
+                store.perform(L("Cắt cuối bài")) {
+                    let e = max(songT, start + 1)
+                    store.project.audioTrimEnd = e >= len - 0.05 ? 0 : e
+                }
+            }
+            .help(L("Dừng phát / xuất ở vị trí vạch đỏ"))
+            Spacer(minLength: 0)
+            if start > 0.05 || end < len - 0.05 {
+                Button { store.perform(L("Bỏ cắt bài")) { store.project.audioTrimStart = 0; store.project.audioTrimEnd = 0 } }
+                    label: { Image(systemName: "arrow.uturn.backward") }
+                    .buttonStyle(.kmIcon).help(L("Bỏ cắt — phát cả bài"))
+            }
+        }
+        .buttonStyle(.kmSecondarySmall)
+        Text(String(format: L("Phát / xuất %@ → %@ (dài %@). Lời giữ nguyên vị trí."),
+                    TimeFormatting.clock(start), TimeFormatting.clock(end), TimeFormatting.clock(max(0, end - start))))
+            .font(Theme.Typo.helper).foregroundStyle(Theme.inkFaint)
+            .fixedSize(horizontal: false, vertical: true)
+
+        Divider().overlay(Theme.stroke)
+        Text(L("Fade")).sectionHeaderStyle()
+        let maxFade = max(0.1, min(10, (end - start) / 2))
+        KMSliderRow(label: L("Fade vào"), value: min(p.audioFadeIn, maxFade), range: 0...maxFade, defaultValue: 0,
+                    format: { String(format: "%.1fs", $0) }) { v in
+            store.edit(L("Fade vào nhạc")) { store.project.audioFadeIn = v }
+        }
+        KMSliderRow(label: L("Fade ra"), value: min(p.audioFadeOut, maxFade), range: 0...maxFade, defaultValue: 0,
+                    format: { String(format: "%.1fs", $0) }) { v in
+            store.edit(L("Fade ra nhạc")) { store.project.audioFadeOut = v }
+        }
+        Text(L("Fade nghe được trong video xuất (lúc xem thử trong app chưa có)."))
+            .font(Theme.Typo.helper).foregroundStyle(Theme.inkFaint)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+
+    // MARK: - Inspector "Dự án" (tab khi không chọn lớp đè / nhạc)
+
+    var projectInspectorBody: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: Theme.Space.m) {
+                Text(L("Khung video")).sectionHeaderStyle()
+                frameSettingsControls
+                Text(L("Dùng chung với bảng Xuất."))
+                    .font(Theme.Typo.helper).foregroundStyle(Theme.inkFaint)
+
+                Divider().overlay(Theme.stroke)
+                Text(L("Nhạc")).sectionHeaderStyle()
+                if store.project.audio != nil, songLength > 0.1 {
+                    let p = store.project
+                    let end = p.audioTrimEnd > 0.05 ? min(p.audioTrimEnd, songLength) : songLength
+                    Text(String(format: L("%@ · âm lượng %d%%%@"), TimeFormatting.clock(max(0, end - p.audioTrimStart)),
+                                Int((p.audioGain * 100).rounded()), p.audioMuted ? " · " + L("tắt tiếng") : ""))
+                        .font(Theme.Typo.label).foregroundStyle(Theme.inkDim)
+                    Button { select(.music) } label: { Label(L("Chỉnh nhạc…"), systemImage: "slider.horizontal.3") }
+                        .buttonStyle(.kmSecondarySmall)
+                } else {
+                    Text(L("Chưa có nhạc.")).font(Theme.Typo.helper).foregroundStyle(Theme.inkFaint)
+                }
+
+                Divider().overlay(Theme.stroke)
+                Text(L("Lời")).sectionHeaderStyle()
+                let timed = store.project.lines.filter(\.isTimed).count
+                Text(String(format: L("%d dòng · %d dòng đã canh giờ"), store.project.lines.count, timed))
+                    .font(Theme.Typo.label).foregroundStyle(Theme.inkDim)
+            }
+            .padding(Theme.Space.l)
+        }
     }
 
     @ViewBuilder

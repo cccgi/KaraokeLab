@@ -10,6 +10,9 @@ final class TransparentVideoExporter: ObservableObject {
     @Published private(set) var statusText = ""
     @Published private(set) var lastError: String?
     @Published private(set) var lastOutputURL: URL?
+    /// Chặng hiện tại — màn "Đang xuất" hiện chữ theo chặng (không hiện "123/6754 khung").
+    enum Phase { case preparing, frames, finishing, audio }
+    @Published private(set) var phase: Phase = .preparing
 
     private var task: Task<Void, Never>?
 
@@ -25,6 +28,7 @@ final class TransparentVideoExporter: ObservableObject {
         guard !isExporting else { return }
         isExporting = true
         progress = 0
+        phase = .preparing
         statusText = "Đang chuẩn bị…"
         lastError = nil
         lastOutputURL = nil
@@ -80,10 +84,15 @@ final class TransparentVideoExporter: ObservableObject {
         task = Task.detached(priority: .userInitiated) { [weak self] in
             guard let self else { return }
 
+            // Tiết lưu: bộ ghi báo mỗi 5 khung → trước đây ContentView (giữ exporter bằng @StateObject) DỰNG LẠI
+            // cả editor ~10–20 lần/giây suốt lúc xuất. Nay tối đa ~5 lần/giây (+ luôn báo mốc 100 %).
+            let gate = ReportGate()
             let report: @Sendable (Double, String) -> Void = { value, text in
+                guard gate.shouldPublish(value) else { return }
                 Task { @MainActor in
                     self.progress = value
                     self.statusText = text
+                    if self.phase != .audio { self.phase = value < 1 ? .frames : .finishing }
                 }
             }
 
@@ -111,6 +120,7 @@ final class TransparentVideoExporter: ObservableObject {
 
                 let opaqueOut = (bgImage != nil || bgVideoURL != nil || solidBG != nil)
                 if needsAudio {
+                    await MainActor.run { self.phase = .audio }
                     report(1, "Đang ghép âm thanh…")
                     try await AudioMux.merge(video: videoTarget, audio: sndURL, to: url,
                                              fileType: (opaqueOut && !wantProRes) ? .mp4 : .mov,
@@ -145,6 +155,19 @@ final class TransparentVideoExporter: ObservableObject {
                 }
             }
         }
+    }
+}
+
+/// Cho qua tối đa ~5 lần báo tiến độ / giây (luôn cho qua mốc ≥ 100 %). Gọi từ luồng nền.
+private final class ReportGate: @unchecked Sendable {
+    private let lock = NSLock()
+    private var last: CFAbsoluteTime = 0
+    func shouldPublish(_ value: Double) -> Bool {
+        lock.lock(); defer { lock.unlock() }
+        let now = CFAbsoluteTimeGetCurrent()
+        guard value >= 1 || now - last >= 0.2 else { return false }
+        last = now
+        return true
     }
 }
 

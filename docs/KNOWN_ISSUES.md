@@ -1,3 +1,7 @@
+## BẢNG NHẠC (2026-09-30): FADE CHỈ CÓ KHI XUẤT
+- `audioFadeIn/audioFadeOut` được bộ xuất video áp (`TransparentVideoExporter`), bộ phát trong app (`PlaybackController`, AVAudioPlayer) CHƯA
+  làm fade → xem thử trong app không nghe fade. Bảng Nhạc ghi rõ điều này. Làm sau: ramp `volume` theo `renderTime` trong PlaybackController.
+
 ## WHISPER LỜI HÁT (lab 2026-09-26): giúp giảm lỗi rõ nhưng (1) giấy phép thương mại chưa rõ (huấn luyện trên nhạc Zing MP3), (2) đã "học thuộc"
 lời một số bài phổ biến (bài có trong danh sách huấn luyện của nó đạt ~1,6 % lỗi), (3) nặng thêm 3,2 GB + ~2 lượt nghe. Chưa đưa vào app.
 

@@ -303,8 +303,13 @@ enum GUITestDriver {
             NotificationCenter.default.post(name: Notification.Name("KMGUITest.togglePlay"), object: nil); return ["ok": true]
 
         case "ui":
-            // Đổi trạng thái giao diện để chụp ảnh (tab trái: steps/background/lyrics/text/visualizer/files; export/closeexport).
+            // Đổi trạng thái giao diện để chụp ảnh (tab trái: steps/background/lyrics/text/visualizer/files; export/closeexport;
+            // inspector: music/project/style; demotrim/cleartrim = đặt/bỏ cắt bài trên bản chép, không đánh dấu "chưa lưu").
             NotificationCenter.default.post(name: Notification.Name("KMGUITest.ui"), object: c["what"] as? String ?? ""); return ["ok": true]
+
+        case "exportto":
+            guard let path = c["path"] as? String else { return ["ok": false, "error": "path?"] }
+            NotificationCenter.default.post(name: Notification.Name("KMGUITest.exportTo"), object: path); return ["ok": true]
 
         case "lines":
             guard let tabs = AppDelegate.current?.tabs else { return ["ok": false, "error": "no tabs"] }

@@ -180,7 +180,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         Self.current = self
         #endif
         NSApp.setActivationPolicy(.regular)
+        #if KM_GUITEST
+        // Bản kiểm thử tự động (Scripts/ui-check.sh) chạy NỀN: không giành bàn phím — nếu không, phím người dùng gõ ở app
+        // khác rơi vào bản kiểm thử (đã thấy: tự mở bảng Xuất, số đo CPU sai).
+        if GUITestDriver.dir == nil { NSApp.activate(ignoringOtherApps: true) }
+        #else
         NSApp.activate(ignoringOtherApps: true)
+        #endif
         PerfMonitor.shared.startIfEnabled()
         #if KM_GUITEST
         Task { @MainActor in GUITestDriver.startIfRequested() }   // CHỈ có trong bản dựng kiểm thử (-DKM_GUITEST); bản Release không chứa mã này

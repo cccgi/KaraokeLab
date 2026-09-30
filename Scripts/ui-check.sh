@@ -102,7 +102,7 @@ def shot(name, window=None, size=(1440, 900)):
     if window: kw["window"] = window
     r = cmd("shot", **kw); report["shots"].append(r); return r
 
-cmd("activate"); time.sleep(1)
+time.sleep(1)   # KHÔNG "activate": bản kiểm thử chạy nền, không giành bàn phím của người dùng
 shot("01-home-1440x900")
 report["cpu"]["home_idle"] = measure(10)
 
@@ -132,6 +132,28 @@ cmd("ui", what="export"); time.sleep(1.5)
 if not shot("20-export-sheet", window="sheet").get("ok"): report["notes"].append("không mở được bảng Xuất")
 cmd("ui", what="closeexport"); time.sleep(1)
 
+# Inspector: bảng Nhạc (kèm 1 đoạn cắt thử → sóng tối ở 2 đầu), tab Dự án.
+cmd("ui", what="background"); cmd("ui", what="music"); time.sleep(1); shot("16-inspector-nhac")
+cmd("ui", what="demotrim"); time.sleep(1); shot("17-inspector-nhac-cat-bai")
+cmd("ui", what="cleartrim"); cmd("ui", what="project"); time.sleep(1); shot("18-inspector-du-an")
+cmd("ui", what="style"); time.sleep(0.5)
+
+# Xuất THẬT 30 s (cắt bài 0:30–1:00 trên bản chép) → chụp màn "Đang xuất" lúc chạy + lúc xong, đo thời gian.
+cmd("ui", what="shorttrim"); cmd("ui", what="export"); time.sleep(1.5)
+out_mp4 = os.path.join(os.path.dirname(proj), "ui-check-export.mp4")
+no_audio = out_mp4[:-4] + ".noaudio.mp4"
+t_exp = time.time()
+cmd("exportto", path=out_mp4); time.sleep(7)
+shot("21-export-dang-xuat", window="sheet")
+while time.time() - t_exp < 300:
+    if os.path.exists(out_mp4) and not os.path.exists(no_audio): break
+    time.sleep(1)
+time.sleep(2)
+shot("22-export-xong", window="sheet")
+report["export30s"] = {"seconds": round(time.time() - t_exp - 2, 1),
+                       "bytes": os.path.getsize(out_mp4) if os.path.exists(out_mp4) else None}
+cmd("ui", what="closeexport"); cmd("ui", what="cleartrim"); time.sleep(1)
+
 cmd("quit"); time.sleep(3)
 json.dump(report, open(os.path.join(out, "report.json"), "w"), ensure_ascii=False, indent=2)
 
@@ -147,6 +169,9 @@ lines = [f"# UI check — {time.strftime('%Y-%m-%d %H:%M')}", "",
          "## Ảnh"]
 for s in report["shots"]:
     if s.get("ok"): lines.append(f"- `{os.path.basename(s['path'])}` — {int(s['size'][0])} × {int(s['size'][1])}")
+if report.get("export30s"):
+    e = report["export30s"]
+    lines += ["", f"Xuất thử 30 s video: {e['seconds']} s · file {round((e['bytes'] or 0) / 1e6, 1)} MB"]
 if report["notes"]:
     lines += ["", "## Ghi chú"] + ["- " + n for n in report["notes"]]
 open(os.path.join(out, "report.md"), "w").write("\n".join(lines) + "\n")

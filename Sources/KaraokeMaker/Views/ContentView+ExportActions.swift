@@ -67,25 +67,47 @@ extension ContentView {
             preferMOV: exportProRes
         ) { url in
             guard let url else { return }
-            store.project.exportSettings.lastMode = .transparentVideo
-            store.markDirty()
-
-            var solid: CGColor?
-            var image: CGImage?
-            var video: URL?
-            switch output {
-            case .transparentMOV: break
-            case .solidMP4(let color): solid = color
-            case .imageMP4: image = backgroundImage
-            case .videoMP4: video = bgVideoURL
-            }
-
-            videoExporter.export(
-                project: store.project, to: url, duration: videoExportDuration,
-                solidBackground: solid, backgroundImage: image, backgroundVideoURL: video,
-                audioURL: audioForExport, preferProRes: exportProRes
-            )
+            startVideoExport(to: url, output: output, audioForExport: audioForExport)
         }
+    }
+
+    /// Xuất video ra `url` (đã chọn chỗ lưu) + mở màn "Đang xuất". Tách riêng để bộ kiểm thử GUI gọi thẳng.
+    func startVideoExport(to url: URL, output: ExportOutput, audioForExport: URL?) {
+        store.project.exportSettings.lastMode = .transparentVideo
+        store.markDirty()
+
+        var solid: CGColor?
+        var image: CGImage?
+        var video: URL?
+        switch output {
+        case .transparentMOV: break
+        case .solidMP4(let color): solid = color
+        case .imageMP4: image = backgroundImage
+        case .videoMP4: video = bgVideoURL
+        }
+
+        videoExporter.export(
+            project: store.project, to: url, duration: videoExportDuration,
+            solidBackground: solid, backgroundImage: image, backgroundVideoURL: video,
+            audioURL: audioForExport, preferProRes: exportProRes
+        )
+        guard videoExporter.isExporting else { return }
+        let bgLabel: String
+        switch output {
+        case .transparentMOV: bgLabel = L("Trong suốt")
+        case .solidMP4: bgLabel = L("Màu nền")
+        case .imageMP4: bgLabel = L("Ảnh nền")
+        case .videoMP4: bgLabel = L("Video nền")
+        }
+        let r = store.project.resolution
+        beginExportJob(ExportJobInfo(
+            url: url, width: r.width, height: r.height, fps: max(1, Int(r.fps.rounded())),
+            duration: videoExportOutputDuration,
+            proRes: output.isTransparent || exportProRes,
+            backgroundLabel: bgLabel,
+            audioLabel: L(exportAudioChoice.rawValue),
+            hasAudio: audioForExport != nil || store.project.overlays.contains { $0.carriesAudio && !$0.isHidden }),
+            useMedia: { if case .imageMP4 = output { return true }; if case .videoMP4 = output { return true }; return false }())
     }
 
     /// Xuất CHỈ sóng nhạc, nền trong suốt (chất lượng theo lựa chọn, không tiếng).
@@ -102,6 +124,13 @@ extension ContentView {
                 solidBackground: nil, backgroundImage: nil, backgroundVideoURL: nil,
                 audioURL: nil, preferProRes: false, visualizerOnly: true
             )
+            guard videoExporter.isExporting else { return }
+            let r = store.project.resolution
+            beginExportJob(ExportJobInfo(
+                url: url, width: r.width, height: r.height, fps: max(1, Int(r.fps.rounded())),
+                duration: videoExportOutputDuration, proRes: true,
+                backgroundLabel: L("Trong suốt"), audioLabel: L("Không tiếng"), hasAudio: false, hasPreview: false),
+                useMedia: false)
         }
     }
 }

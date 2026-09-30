@@ -71,6 +71,9 @@ struct TimelineEditor: View {
     var fitTick: Int = 0
     /// Từ máy chưa chắc (karaoke tự động): khoá "\(lineID)#\(chỉ số từ)" → gạch chân màu cảnh báo trên timeline.
     var uncertainWordKeys: Set<String> = []
+    /// Nút "Nhạc" ở đầu làn (cách A): mở / đóng bảng Nhạc trong inspector. Bấm vào SÓNG vẫn = tua.
+    var musicSelected: Bool = false
+    var onSelectMusic: () -> Void = {}
 
     // M-C — do ContentView sở hữu để lệnh / menu điều khiển zoom.
     @Binding var pointsPerSecond: Double
@@ -174,8 +177,21 @@ struct TimelineEditor: View {
     private var musicHeadRow: some View {
         let muted = store.project.audioMuted
         return HStack(spacing: 5) {
-            Image(systemName: "waveform").font(.system(size: 10)).foregroundStyle(.secondary)
-            Text(L("Nhạc")).font(.system(size: 10, weight: .semibold)).foregroundStyle(.secondary)
+            // Cách A (chủ dự án 2026-09-30): nút "Nhạc" → bảng Nhạc (âm lượng / cắt / fade) ở inspector.
+            Button(action: onSelectMusic) {
+                HStack(spacing: 4) {
+                    Image(systemName: "waveform").font(.system(size: 10))
+                    Text(L("Nhạc")).font(.system(size: 10, weight: .semibold)).lineLimit(1)
+                }
+                .fixedSize()
+                .foregroundStyle(musicSelected ? Theme.accent : Theme.inkDim)
+                .padding(.horizontal, 4).padding(.vertical, 2)
+                .background(RoundedRectangle(cornerRadius: Theme.Radius.xs)
+                    .fill(musicSelected ? Theme.accentSoft : Color.white.opacity(0.06)))
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .help(musicSelected ? L("Đóng bảng Nhạc") : L("Chỉnh nhạc: âm lượng, cắt đầu / đuôi, fade"))
             Spacer(minLength: 0)
             Button {
                 store.perform(muted ? L("Bật tiếng nhạc") : L("Tắt tiếng nhạc")) { store.project.audioMuted.toggle() }
@@ -303,7 +319,9 @@ struct TimelineEditor: View {
                         karaokeHasContent: playback.duration > 0.1 || !store.project.lines.isEmpty,
                         onKaraokeClipMove: onKaraokeClipMove,
                         fitTick: fitTick,
-                        uncertainWordKeys: uncertainWordKeys
+                        uncertainWordKeys: uncertainWordKeys,
+                        audioTrimStart: store.project.audioTrimStart,
+                        audioTrimEnd: store.project.audioTrimEnd
                     )
                     .onAppear { viewportWidth = geo.size.width }
                     .onChange(of: geo.size.width) { viewportWidth = $0 }
@@ -437,6 +455,8 @@ private struct TimelineScrollRepresentable: NSViewRepresentable {
     var onKaraokeClipMove: (Double) -> Void = { _ in }
     var fitTick: Int = 0
     var uncertainWordKeys: Set<String> = []
+    var audioTrimStart: Double = 0
+    var audioTrimEnd: Double = 0
 
     func makeNSView(context: Context) -> NSScrollView {
         let scroll = NSScrollView()
@@ -515,6 +535,7 @@ private struct TimelineScrollRepresentable: NSViewRepresentable {
         c.onAssignSinger = onAssignSinger
         c.singerColors = singerColors
         c.setUncertainWordKeys(uncertainWordKeys)
+        c.setAudioTrim(start: CGFloat(max(0, audioTrimStart)), end: CGFloat(max(0, audioTrimEnd)))
         c.setDuetMode(duetMode)
         c.followScroll = false   // "Theo playhead" đã bỏ — user cuộn tay
         c.timeProvider = { [weak playback] in playback?.renderTime ?? 0 }
@@ -689,6 +710,14 @@ private final class TimelineCanvasView: NSView, NSTextFieldDelegate {
     /// Từ chưa chắc → gạch chân (DESIGN_SYSTEM §14). `uncertainLineIDs` lọc nhanh trước khi xét từng từ.
     private var uncertainWordKeys: Set<String> = []
     private var uncertainLineIDs: Set<String> = []
+    /// Cắt đầu / đuôi bài (giây trong BÀI; end 0 = tới hết) → phần bị cắt trên sóng nhạc tối lại.
+    private var trimStart: CGFloat = 0
+    private var trimEnd: CGFloat = 0
+    func setAudioTrim(start: CGFloat, end: CGFloat) {
+        guard start != trimStart || end != trimEnd else { return }
+        trimStart = start; trimEnd = end
+        needsDisplay = true
+    }
     func setUncertainWordKeys(_ keys: Set<String>) {
         guard keys != uncertainWordKeys else { return }
         uncertainWordKeys = keys
@@ -1282,6 +1311,23 @@ private final class TimelineCanvasView: NSView, NSTextFieldDelegate {
             // sóng bắt đầu ở `lyricOff` và dài đúng bằng bài.
             let songW = (karaokeSongLen > 0.5 ? karaokeSongLen : max(0, duration - lyricOff)) * pps
             img.draw(in: CGRect(x: lyricOff * pps, y: waveTop, width: max(1, songW), height: waveHeight))
+            // Phần bài bị CẮT (bảng Nhạc) → phủ tối + vạch mốc màu nhấn (không phát / không xuất đoạn này).
+            let songLen = karaokeSongLen > 0.5 ? karaokeSongLen : max(0, duration - lyricOff)
+            let x0 = lyricOff * pps, x1 = (lyricOff + songLen) * pps
+            ctx.setFillColor(NSColor.black.withAlphaComponent(0.6).cgColor)
+            if trimStart > 0.05 {
+                let xs = min(x1, x0 + trimStart * pps)
+                ctx.fill(CGRect(x: x0, y: waveTop, width: xs - x0, height: waveHeight))
+                ctx.setFillColor(Theme.NS.accent.cgColor)
+                ctx.fill(CGRect(x: xs - 1, y: waveTop, width: 2, height: waveHeight))
+                ctx.setFillColor(NSColor.black.withAlphaComponent(0.6).cgColor)
+            }
+            if trimEnd > 0.05, trimEnd < songLen - 0.05 {
+                let xe = max(x0, x0 + trimEnd * pps)
+                ctx.fill(CGRect(x: xe, y: waveTop, width: x1 - xe, height: waveHeight))
+                ctx.setFillColor(Theme.NS.accent.cgColor)
+                ctx.fill(CGRect(x: xe - 1, y: waveTop, width: 2, height: waveHeight))
+            }
         }
         ctx.setFillColor(NSColor.black.withAlphaComponent(0.22).cgColor)
         ctx.fill(CGRect(x: 0, y: 0, width: width, height: rulerH))

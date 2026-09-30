@@ -1,6 +1,27 @@
 # PROGRESS
 
 ## CURRENT MILESTONE
+> **TẠM DỪNG (2026-09-30)** — chủ dự án chuyển sang project khác, sẽ gọi lại. Bản dưới đây đã lên git + app chính.
+> Việc đề xuất khi quay lại (chủ dự án chọn): (1) % nhỏ trên nút Xuất khi bảng Xuất đóng mà vẫn đang xuất; (2) fade nhạc nghe được
+> khi xem thử trong app (KNOWN_ISSUES); (3) kéo 2 mép đoạn cắt ngay trên sóng nhạc; (4) dựng lại bố cục bảng Sóng nhạc / Kiểu chữ.
+
+### 2026-09-30 — BẢNG NHẠC + TAB DỰ ÁN Ở INSPECTOR (cách A chủ dự án chọn; chưa commit — chờ test)
+- Bản 2026-09-29 (6 điểm phản hồi) đã được chủ dự án duyệt → app chính cập nhật + đẩy git (`5a882fe`).
+- Nút "Nhạc" ở đầu làn nhạc → inspector **Nhạc**: âm lượng, tắt tiếng, cắt đầu / cuối (thanh trượt + "= vạch đỏ" + bỏ cắt),
+  fade vào / ra. Dữ liệu `audioGain/audioTrimStart/audioTrimEnd/audioFadeIn/audioFadeOut` có từ M-D (phát + xuất đã dùng) nhưng
+  TRƯỚC ĐÂY KHÔNG CÓ CHỖ CHỈNH. Bấm vào sóng nhạc vẫn = tua. Đoạn bị cắt tối lại trên sóng + vạch màu nhấn.
+- `EditorSelection.music` (+ `musicInspectorOpen`); chọn lớp đè / dòng lời / "Xong" / đổi dự án → đóng bảng Nhạc.
+- Inspector khi không chọn lớp đè / nhạc: 2 tab icon **Kiểu chữ | Dự án** (khung hình + FPS dùng chung `frameSettingsControls`
+  với bảng Xuất, tóm tắt nhạc + nút "Chỉnh nhạc…", số dòng lời).
+- Fade chỉ nghe trong video xuất (bộ phát trong app chưa làm fade) — ghi rõ trong bảng.
+- **Màn "Đang xuất" kiểu CapCut** (`Views/ContentView+ExportProgress.swift`): bấm Xuất → chọn chỗ lưu → bảng Xuất đổi sang ảnh xem
+  trước (đúng tỉ lệ, `ThumbnailRenderer.exportPreview`) + thông tin (tên, thời lượng, dung lượng, độ phân giải, codec, định dạng,
+  FPS, nền, âm thanh) + **%** + chặng · đã chạy · còn lại. Bỏ dòng "123/6754 khung". Dung lượng: "tối đa ~" (trần bitrate) →
+  ngoại suy từ file đang ghi → cỡ thật khi xong. Xong: "Mở thư mục" / "Xong"; lỗi / huỷ: "Quay lại". Đóng bảng giữa chừng vẫn xuất tiếp.
+- Tiến độ xuất tiết lưu ≤ 5 lần/giây (`ReportGate`) — trước đây ContentView dựng lại ~10–20 lần/giây suốt lúc xuất.
+  Thanh tiến độ riêng `KMProgressBar` (không hiệu ứng đuổi — khớp đúng số %). Đo: xuất 30 s 1080p nền màu = 14,7 s, 2,4 MB.
+- `ui-check.sh`: xuất thật 30 s (lệnh kiểm thử `exportto`), bản kiểm thử chạy NỀN (không giành bàn phím người dùng).
+
 ### 2026-09-29 (khuya) — SỬA THEO PHẢN HỒI 6 ĐIỂM CỦA CHỦ DỰ ÁN (chưa commit — chờ chủ dự án test bản thử)
 - Tab "Tạo Karaoke" luôn hiện; tạo xong thì 3 nút tạo khoá cho tới khi dán / sửa lời hoặc đổi nhạc.
 - Khung hình xuất: 16:9 · 9:16 · 1:1 · 12:16 + độ phân giải theo tỉ lệ.

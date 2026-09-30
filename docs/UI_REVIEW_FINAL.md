@@ -47,8 +47,7 @@ cùng mục đích — nên gộp 1 `KMSliderRow` ở lần sau).
 - Đo: bản thử chặng 1–3 đứng yên 20 s = **0.0% CPU**. Bản cuối CHƯA đo trong editor có dự án mở (cần chủ dự án mở app) — đo lại khi duyệt.
 
 ## 7. Còn tồn — trạng thái sau phản hồi của chủ dự án (2026-09-29, khuya)
-1. **Inspector cho Nhạc / Dự án** — CHỜ chủ dự án chọn cách bấm (bấm làn nhạc hiện = tua vạch đỏ; đề xuất: nút "Nhạc" ở đầu làn để
-   chọn, giữ bấm-để-tua; "Dự án" = tab ở đầu inspector khi không chọn gì).
+1. **ĐÃ LÀM (2026-09-30, cách A)** — Inspector Nhạc (nút "Nhạc" ở đầu làn; bấm sóng vẫn tua) + tab "Dự án" ở đầu inspector.
 2. **ĐÃ SỬA** — Tab "Tạo Karaoke" LUÔN hiện. Tạo xong → nút "Tạo nhanh / Tạo chất lượng / Không cần lời" KHOÁ (kèm dòng giải thích 🔒)
    cho tới khi người dùng DÁN LẠI / SỬA lời ở ô tạo karaoke hoặc ĐỔI file nhạc (`canCreateKaraoke`, `karaokeInputChanged`).
 3. **ĐÃ SỬA** — Khung hình xuất = segmented **16:9 · 9:16 · 1:1 · 12:16** + menu độ phân giải theo tỉ lệ (`VideoResolution.Aspect`;

@@ -88,4 +88,7 @@ Status: NOT_STARTED · PARTIAL · FUNCTIONAL · VERIFIED · BROKEN · NEEDS_REFA
 | UI-7 | Khung hình xuất 16:9 · 9:16 · 1:1 · 12:16 | FUNCTIONAL | `VideoResolution.Aspect` + menu độ phân giải theo tỉ lệ. |
 | UI-8 | Thanh trượt chung `KMSlider` / `KMSliderRow` | FUNCTIONAL | Tô màu nhấn, bấm đúp = mặc định, tiết lưu 20 Hz. Thay 5 biến thể cũ + thanh tua. |
 | UI-9 | "Cột mảnh cổ điển" bật / tắt | FUNCTIONAL | Bấm lần 2 trả về kiểu trước (`classicVizBackup`, trong phiên). |
+| UI-11 | Inspector Nhạc (âm lượng / tắt tiếng / cắt đầu-cuối / fade) | FUNCTIONAL | Nút "Nhạc" ở đầu làn; `EditorSelection.music`; đoạn cắt tối trên sóng. Fade: chỉ khi xuất (preview chưa có). |
+| UI-12 | Inspector tab "Dự án" (khung hình, FPS, tóm tắt nhạc / lời) | FUNCTIONAL | `frameSettingsControls` dùng chung với bảng Xuất. |
+| UI-13 | Màn "Đang xuất" (ảnh xem trước + thông tin video + %) | FUNCTIONAL | `ContentView+ExportProgress.swift`; tiến độ tiết lưu 5 Hz; dung lượng ngoại suy từ file đang ghi. |
 | UI-10 | Kiểm tra giao diện tự động | FUNCTIONAL | `Scripts/ui-check.sh` — ảnh 3 cỡ cửa sổ + đo CPU; kết quả `.ui-check/` (không lên git). |

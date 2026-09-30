@@ -10,6 +10,7 @@ extension ContentView {
         if let id = selectedOverlayID, store.project.overlays.contains(where: { $0.id == id }) {
             return .overlay(id: id)
         }
+        if musicInspectorOpen { return .music }
         if store.project.lines.indices.contains(currentLineIndex) {
             return .lyricLine(index: currentLineIndex)
         }
@@ -18,6 +19,7 @@ extension ContentView {
 
     /// Đặt selection nhất quán qua 1 đường.
     func select(_ sel: EditorSelection) {
+        musicInspectorOpen = (sel == .music)
         switch sel {
         case .none:
             selectedOverlayID = nil
@@ -26,6 +28,8 @@ extension ContentView {
         case .lyricLine(let i):
             selectedOverlayID = nil
             currentLineIndex = clampedIndex(i)
+        case .music:
+            selectedOverlayID = nil; selectedOverlayIDs = []
         }
     }
 
@@ -83,7 +87,7 @@ extension ContentView {
                 switch editorSelection {
                 case .overlay(let id): removeOverlay(id)
                 case .lyricLine(let i): clearLine(clampedIndex(i))
-                case .none: break
+                case .none, .music: break
                 }
             }
         case .duplicateSelection:
@@ -94,7 +98,7 @@ extension ContentView {
                 if store.project.lines.indices.contains(i) {
                     timelineDuplicateLines([store.project.lines[i].id])
                 }
-            case .none: break
+            case .none, .music: break
             }
         case .nudgeSelection(let d):
             switch editorSelection {
@@ -106,7 +110,7 @@ extension ContentView {
                 if store.project.lines.indices.contains(i) {
                     timelineNudgeLines([store.project.lines[i].id], d)
                 }
-            case .none: break
+            case .none, .music: break
             }
         case .zoomIn:
             timelineZoom = min(400, timelineZoom * 1.4)

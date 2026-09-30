@@ -159,3 +159,22 @@ extension KMSliderRow {
                   onChange: { binding.wrappedValue = $0 })
     }
 }
+
+/// Thanh tiến độ phẳng (rãnh 4pt `strokeStrong` + phần đã xong màu `tint`). KHÔNG hiệu ứng trượt: thanh luôn khớp đúng
+/// số % hiện bên cạnh (ProgressView hệ thống tự "đuổi" giá trị → có lúc ghi 100 % mà thanh mới 70 %).
+struct KMProgressBar: View {
+    let value: Double
+    var tint: Color = Theme.accent
+    var body: some View {
+        GeometryReader { geo in
+            ZStack(alignment: .leading) {
+                Capsule().fill(Theme.strokeStrong)
+                Capsule().fill(tint).frame(width: geo.size.width * CGFloat(max(0, min(1, value))))
+            }
+        }
+        .frame(height: 4)
+        .transaction { $0.animation = nil }
+        .accessibilityElement()
+        .accessibilityValue(String(format: "%.0f%%", max(0, min(1, value)) * 100))
+    }
+}

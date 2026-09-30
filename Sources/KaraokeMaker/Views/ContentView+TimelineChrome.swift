@@ -174,7 +174,7 @@ extension ContentView {
     var timelineArea: some View {
         TimelineEditor(
             currentLineIndex: currentLineIndex,
-            onSelect: { currentLineIndex = $0; selectedOverlayID = nil },
+            onSelect: { currentLineIndex = $0; selectedOverlayID = nil; musicInspectorOpen = false },
             onSeek: { seekTo($0) },
             onCommit: timelineApplyChanges,
             onWordsCommit: timelineWordsCommit,
@@ -225,6 +225,8 @@ extension ContentView {
             onKaraokeClipMove: timelineKaraokeClipMove,
             fitTick: timelineFitTick,
             uncertainWordKeys: Set(validAutoUncertain.map { "\($0.lineID)#\($0.wordIndex)" }),
+            musicSelected: musicInspectorOpen,
+            onSelectMusic: { select(musicInspectorOpen ? .none : .music) },
             pointsPerSecond: $timelineZoom,
             viewportWidth: $timelineViewportW
         )

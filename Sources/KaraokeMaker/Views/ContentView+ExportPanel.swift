@@ -247,58 +247,63 @@ extension ContentView {
         }
     }
 
-    var transparentVideoBlock: some View {
-        VStack(alignment: .leading, spacing: Theme.Space.m) {
-            Text(L("Xuất video")).sectionHeaderStyle()
-
-            // Khung hình: 4 tỉ lệ (segmented) → độ phân giải của tỉ lệ đó → FPS.
-            let res = store.project.resolution
-            let aspect = res.aspect
-            VStack(alignment: .leading, spacing: Theme.Space.xs) {
-                Text(L("Khung hình")).font(Theme.Typo.label).foregroundStyle(Theme.inkDim)
-                Picker("", selection: Binding<VideoResolution.Aspect?>(
-                    get: { aspect },
-                    set: { a in
-                        guard let a, a != aspect else { return }
-                        let s = a.sizes[a.defaultIndex]
+    /// Khung hình (4 tỉ lệ) + độ phân giải theo tỉ lệ + FPS — dùng CHUNG cho bảng Xuất và tab "Dự án" của inspector.
+    @ViewBuilder
+    var frameSettingsControls: some View {
+        let res = store.project.resolution
+        let aspect = res.aspect
+        VStack(alignment: .leading, spacing: Theme.Space.xs) {
+            Text(L("Khung hình")).font(Theme.Typo.label).foregroundStyle(Theme.inkDim)
+            Picker("", selection: Binding<VideoResolution.Aspect?>(
+                get: { aspect },
+                set: { a in
+                    guard let a, a != aspect else { return }
+                    let s = a.sizes[a.defaultIndex]
+                    store.perform(L("Đổi khung hình")) {
+                        store.project.resolution.width = s.width
+                        store.project.resolution.height = s.height
+                    }
+                }
+            )) {
+                ForEach(VideoResolution.Aspect.allCases) { Text($0.rawValue).tag(Optional($0)) }
+            }
+            .pickerStyle(.segmented).labelsHidden()
+        }
+        HStack(spacing: Theme.Space.l) {
+            if let aspect {
+                Picker(L("Độ phân giải"), selection: Binding<Int>(
+                    get: { aspect.sizes.firstIndex { $0.width == res.width && $0.height == res.height } ?? aspect.defaultIndex },
+                    set: { i in
+                        let s = aspect.sizes[i]
                         store.perform(L("Đổi khung hình")) {
                             store.project.resolution.width = s.width
                             store.project.resolution.height = s.height
                         }
                     }
                 )) {
-                    ForEach(VideoResolution.Aspect.allCases) { Text($0.rawValue).tag(Optional($0)) }
+                    ForEach(aspect.sizes.indices, id: \.self) { Text(aspect.sizes[$0].name).tag($0) }
                 }
-                .pickerStyle(.segmented).labelsHidden()
+            } else {
+                Text(String(format: L("Tuỳ chỉnh %d × %d"), res.width, res.height))
+                    .font(Theme.Typo.label).foregroundStyle(Theme.inkDim)
             }
-            HStack(spacing: Theme.Space.l) {
-                if let aspect {
-                    Picker(L("Độ phân giải"), selection: Binding<Int>(
-                        get: { aspect.sizes.firstIndex { $0.width == res.width && $0.height == res.height } ?? aspect.defaultIndex },
-                        set: { i in
-                            let s = aspect.sizes[i]
-                            store.perform(L("Đổi khung hình")) {
-                                store.project.resolution.width = s.width
-                                store.project.resolution.height = s.height
-                            }
-                        }
-                    )) {
-                        ForEach(aspect.sizes.indices, id: \.self) { Text(aspect.sizes[$0].name).tag($0) }
-                    }
-                } else {
-                    Text(String(format: L("Tuỳ chỉnh %d × %d"), res.width, res.height))
-                        .font(Theme.Typo.label).foregroundStyle(Theme.inkDim)
-                }
 
-                Picker("FPS", selection: Binding<Int>(
-                    get: { Int(store.project.resolution.fps.rounded()) },
-                    set: { newValue in store.perform(L("Đổi FPS")) { store.project.resolution.fps = Double(newValue) } }
-                )) {
-                    ForEach([24, 25, 30, 50, 60], id: \.self) { Text("\($0)").tag($0) }
-                }
-                .frame(width: 120)
+            Picker("FPS", selection: Binding<Int>(
+                get: { Int(store.project.resolution.fps.rounded()) },
+                set: { newValue in store.perform(L("Đổi FPS")) { store.project.resolution.fps = Double(newValue) } }
+            )) {
+                ForEach([24, 25, 30, 50, 60], id: \.self) { Text("\($0)").tag($0) }
             }
-            .font(Theme.Typo.label)
+            .frame(width: 120)
+        }
+        .font(Theme.Typo.label)
+    }
+
+    var transparentVideoBlock: some View {
+        VStack(alignment: .leading, spacing: Theme.Space.m) {
+            Text(L("Xuất video")).sectionHeaderStyle()
+
+            frameSettingsControls
 
             Text(String(format: L("Dài ~%@"), TimeFormatting.clock(videoExportOutputDuration))
                  + (store.project.karaokeClipStart > 0.05
@@ -331,26 +336,14 @@ extension ContentView {
                 }
             }
 
-            // Hành động chính
-            if videoExporter.isExporting {
-                VStack(alignment: .leading, spacing: Theme.Space.xs) {
-                    ProgressView(value: videoExporter.progress).buttonStyle(.kmSecondarySmall)
-                    HStack {
-                        Text(videoExporter.statusText).font(Theme.Typo.helper).foregroundStyle(Theme.inkDim)
-                        Spacer()
-                        ElapsedLabel()
-                        Button(L("Huỷ")) { videoExporter.cancel() }.buttonStyle(.kmSecondarySmall)
-                    }
+            // Hành động chính — bấm xong bảng chuyển sang màn "Đang xuất" (`exportProgressPanel`).
+            HStack {
+                Spacer()
+                Button { exportTransparentVideo() } label: {
+                    Label(L("Xuất video…"), systemImage: "square.and.arrow.up")
                 }
-            } else {
-                HStack {
-                    Spacer()
-                    Button { exportTransparentVideo() } label: {
-                        Label(L("Xuất video…"), systemImage: "square.and.arrow.up")
-                    }
-                    .buttonStyle(.kmPrimaryLarge)
-                    .disabled(!store.project.hasAnyTiming)
-                }
+                .buttonStyle(.kmPrimaryLarge)
+                .disabled(!store.project.hasAnyTiming || videoExporter.isExporting)
             }
 
             if let out = videoExporter.lastOutputURL, !videoExporter.isExporting, videoExporter.lastError == nil {

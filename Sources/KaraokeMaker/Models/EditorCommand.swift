@@ -10,6 +10,8 @@ enum EditorSelection: Equatable {
     case none
     case lyricLine(index: Int)
     case overlay(id: UUID)
+    /// Làn Nhạc (nút "Nhạc" ở đầu làn) → inspector Nhạc: âm lượng / cắt đầu-đuôi / fade.
+    case music
 }
 
 /// M-A — Lệnh editor. Toolbar, phím tắt, context menu, menu bar gọi CÙNG một đường:

@@ -13,12 +13,26 @@ enum ThumbnailRenderer {
     /// không được phép làm hỏng việc LƯU PROJECT (đây chỉ là tiện ích phụ).
     /// - Parameter atTime: mốc vạch đỏ user đang xem; ≤0 → tự chọn mốc đại diện.
     static func generate(for project: KaraokeProject, projectURL: URL, atTime: TimeInterval = 0) {
-        let canvas = size
+        guard let image = renderImage(for: project, atTime: atTime, canvas: size) else { return }
+        savePNG(image, to: ProjectLibrary.thumbnailURL(for: projectURL))
+    }
+
+    /// Ảnh xem trước đúng TỈ LỆ khung xuất (cạnh dài `maxSide`) — cho màn "Đang xuất". `useMedia = false` → nền tối
+    /// (khi người dùng xuất nền màu / trong suốt dù dự án có ảnh nền).
+    static func exportPreview(for project: KaraokeProject, maxSide: CGFloat = 640, useMedia: Bool) -> CGImage? {
+        let w = CGFloat(max(2, project.resolution.width)), h = CGFloat(max(2, project.resolution.height))
+        let s = maxSide / max(w, h)
+        var p = project
+        if !useMedia { p.backgroundMedia = nil }
+        return renderImage(for: p, atTime: 0, canvas: CGSize(width: (w * s).rounded(), height: (h * s).rounded()))
+    }
+
+    private static func renderImage(for project: KaraokeProject, atTime: TimeInterval, canvas: CGSize) -> CGImage? {
         let width = Int(canvas.width), height = Int(canvas.height)
         guard let cg = CGContext(data: nil, width: width, height: height,
                                  bitsPerComponent: 8, bytesPerRow: 0,
                                  space: CGColorSpaceCreateDeviceRGB(),
-                                 bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return }
+                                 bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
 
         let dur = project.audio?.duration ?? 0
         let t = representativeTime(project, atTime: atTime, duration: dur)
@@ -62,8 +76,7 @@ enum ThumbnailRenderer {
 
         drawVisualizer(cg, project: project, t: t, canvas: canvas, above: true)
 
-        guard let image = cg.makeImage() else { return }
-        savePNG(image, to: ProjectLibrary.thumbnailURL(for: projectURL))
+        return cg.makeImage()
     }
 
     /// Mốc thời gian cho thumbnail: ưu tiên vạch đỏ user để lại; nếu không thì

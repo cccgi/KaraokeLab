@@ -114,6 +114,14 @@ struct ContentView: View {
     @State var exportAdvancedOpen = false
     /// Kiểu sóng nhạc TRƯỚC khi bấm "Cột mảnh cổ điển" — bấm lần nữa trả về đúng kiểu này (chỉ bộ nhớ).
     @State var classicVizBackup: MusicVisualizer?
+    /// Inspector đang mở bảng Nhạc (bấm nút "Nhạc" ở đầu làn — cách A chủ dự án chọn 2026-09-30).
+    /// Bấm vào sóng nhạc vẫn = tua vạch đỏ như cũ.
+    @State var musicInspectorOpen = false
+    /// Tab inspector khi KHÔNG chọn lớp đè / nhạc: Kiểu chữ | Dự án.
+    @State var inspectorProjectTab = false
+    /// Lần xuất đang hiện ở màn "Đang xuất" (nil = bảng Xuất hiện cài đặt) + ảnh xem trước của nó.
+    @State var exportJob: ExportJobInfo?
+    @State var exportPreviewImage: NSImage?
     @AppStorage("kmShowSafeArea") var showSafeArea = false
 
     // Song ca / đánh dấu người hát
@@ -223,6 +231,7 @@ struct ContentView: View {
         .onChange(of: store.project.audioTrimEnd) { _ in syncAudioSettings() }
         .onChange(of: store.project.audioGain) { _ in syncAudioSettings() }
         .onChange(of: store.project.audioMuted) { _ in syncAudioSettings() }
+        .onChange(of: selectedOverlayID) { id in if id != nil { musicInspectorOpen = false } }
         .onChange(of: store.project.karaokeClipStart) { _ in syncAudioSettings() }
         .onChange(of: store.project.backgroundMedia?.lastKnownPath) { _ in
             reloadBackgroundImage()
@@ -337,6 +346,8 @@ struct ContentView: View {
             )
         )
         .sheet(isPresented: $showExportSheet) { exportSheet }
+        // Đóng bảng Xuất khi đã xong / lỗi / huỷ → lần mở sau về lại cài đặt (đang chạy thì giữ màn tiến độ).
+        .onChange(of: showExportSheet) { open in if !open, !videoExporter.isExporting { endExportJobView() } }
     }
 
     /// Pop-up "Xuất" (kiểu CapCut) — SRT / ASS / nền / video, mở từ nút Xuất trên thanh trên.
@@ -352,9 +363,13 @@ struct ContentView: View {
             }
             .padding(.horizontal, Theme.Space.xl).padding(.vertical, Theme.Space.l)
             Divider().overlay(Theme.stroke)
-            ScrollView { exportTabContent.padding(Theme.Space.xl) }
+            if let job = exportJob {
+                exportProgressPanel(job)
+            } else {
+                ScrollView { exportTabContent.padding(Theme.Space.xl) }
+            }
         }
-        .frame(width: 560, height: 560)   // 640 → 560: mặc định (Nâng cao gập) để trống ~1/3 dưới (ảnh ui-check); mở Nâng cao thì cuộn
+        .frame(width: 560, height: exportJob == nil ? 560 : 440)   // 640 → 560: mặc định (Nâng cao gập) để trống ~1/3 dưới (ảnh ui-check); mở Nâng cao thì cuộn
         .background(Theme.panel)
     }
 
