@@ -11,13 +11,7 @@ extension ContentView {
             if case .overlay(let id) = editorSelection {
                 overlayInspectorColumn(id)
             } else {
-                HStack(spacing: 6) {
-                    Image(systemName: "textformat").font(.system(size: 11)).foregroundStyle(Theme.inkDim)
-                    Text(L("Kiểu chữ karaoke")).sectionHeaderStyle()
-                    Spacer()
-                }
-                .padding(.horizontal, Theme.Metric.pad).padding(.vertical, Theme.Metric.gap)
-                Divider().overlay(Theme.stroke)
+                PanelHeader(title: L("Kiểu chữ karaoke"), icon: "textformat")
 
                 StylePanel(currentLineIndex: currentLineIndex, onCommitLineText: commitLyricEdit) {
                     EmptyView()
@@ -31,30 +25,24 @@ extension ContentView {
     @ViewBuilder
     func overlayInspectorColumn(_ id: UUID) -> some View {
         VStack(alignment: .leading, spacing: 0) {
-            HStack(spacing: 6) {
-                Image(systemName: "square.2.layers.3d.top.filled").font(.system(size: 11)).foregroundStyle(Theme.accent)
-                Text(store.project.overlays.first(where: { $0.id == id })?.name ?? L("Lớp đè"))
-                    .font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.ink)
-                    .lineLimit(1).truncationMode(.middle)
+            PanelHeader(title: store.project.overlays.first(where: { $0.id == id })?.name ?? L("Lớp đè"),
+                        icon: "square.2.layers.3d.top.filled", iconTint: Theme.accent) {
                 Button {
                     let cur = store.project.overlays.first(where: { $0.id == id })?.name ?? ""
                     if let new = TextPrompt.run(title: L("Đổi tên clip"), defaultValue: cur, okTitle: L("Đổi")) {
                         timelineOverlayRename(id, new)
                     }
-                } label: { Image(systemName: "pencil").font(.system(size: 10)) }
-                    .buttonStyle(.borderless).help(L("Đổi tên clip"))
-                Spacer()
-                Button(L("Xong")) { selectedOverlayID = nil }.controlSize(.small)
+                } label: { Image(systemName: "pencil") }
+                    .buttonStyle(.kmIcon).help(L("Đổi tên clip"))
+                Button(L("Xong")) { selectedOverlayID = nil }.buttonStyle(.kmSecondarySmall)
             }
-            .padding(.horizontal, Theme.Metric.pad).padding(.vertical, Theme.Metric.gap)
-            Divider().overlay(Theme.stroke)
             if selectedOverlayIDs.count > 1 {
                 let asGroup = store.project.overlayGroups.first { Set($0.memberIDs) == selectedOverlayIDs }
                 VStack(alignment: .leading, spacing: 8) {
                     Text(String(format: L("%d lớp đang chọn"), selectedOverlayIDs.count))
                         .font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.ink)
                     Text(L("Kéo bất kỳ clip nào để dời cả nhóm · ⌫ để xoá cả nhóm · ⌘/Shift+bấm để thêm/bớt."))
-                        .font(.caption2).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                        .font(Theme.Typo.helper).foregroundStyle(Theme.inkFaint).fixedSize(horizontal: false, vertical: true)
                     HStack(spacing: 6) {
                         if let g = asGroup {
                             Text(String(format: L("Nhóm: %@"), g.name)).font(.caption.weight(.semibold)).foregroundStyle(Theme.accent)
@@ -62,7 +50,7 @@ extension ContentView {
                             Button(L("Bỏ nhóm")) { ungroup(g.id) }.controlSize(.small)
                         } else {
                             Button { makeGroupFromSelection() } label: { Label(L("Gom thành nhóm"), systemImage: "square.stack.3d.up") }
-                                .controlSize(.small).buttonStyle(.borderedProminent).tint(Theme.accent)
+                                .buttonStyle(.kmPrimary)
                         }
                     }
                     Button(role: .destructive) {
@@ -85,7 +73,7 @@ extension ContentView {
                             HStack(spacing: 6) {
                                 Image(systemName: "square.stack.3d.up.fill").font(.caption2).foregroundStyle(Theme.accent)
                                 Text(g.name).font(.caption.weight(.semibold))
-                                Text(String(format: L("(%d lớp)"), g.memberIDs.count)).font(.caption2).foregroundStyle(.secondary)
+                                Text(String(format: L("(%d lớp)"), g.memberIDs.count)).font(Theme.Typo.helper).foregroundStyle(Theme.inkFaint)
                                 Spacer()
                             }
                             HStack(spacing: 6) {
@@ -103,7 +91,7 @@ extension ContentView {
                             }
                         }
                         .padding(8)
-                        .background(RoundedRectangle(cornerRadius: 6).fill(Color.white.opacity(0.04)))
+                        .background(RoundedRectangle(cornerRadius: Theme.Radius.md).fill(Color.white.opacity(0.04)))
                         Divider()
                     }
                     overlayInspectorInline(id)
@@ -113,7 +101,7 @@ extension ContentView {
                         Label(L("Xoá lớp này"), systemImage: "trash")
                     }
                 }
-                .padding(14)
+                .padding(Theme.Space.l)
             }
             }
         }
@@ -128,7 +116,7 @@ extension ContentView {
     func timeFieldRow(_ title: String, value: TimeInterval?, isStart: Bool) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
-                Text(title).font(.callout)
+                Text(title).font(Theme.Typo.label)
                 Spacer()
                 TimeField(seconds: value) { t in
                     isStart ? setLineStartTime(currentLineIndex, t) : setLineEndTime(currentLineIndex, t)

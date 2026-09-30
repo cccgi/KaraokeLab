@@ -21,6 +21,9 @@ struct LyricEditPanel: View {
     var onDismissUncertain: (AutoUncertainWord) -> Void = { _ in }
 
     @FocusState private var focusedID: UUID?
+    /// Dòng ĐANG HÁT theo vạch đỏ (cập nhật bởi `LyricFollowTicker` — chỉ panel này dựng lại, KHÔNG kéo
+    /// cả `ContentView` như cách cũ `PlaybackTicks.followCurrentLine` đã phải tắt vì lag Intel).
+    @State private var playingIndex: Int?
     @State private var editingID: UUID?
     @State private var draft = ""
     @State private var original = ""
@@ -28,15 +31,15 @@ struct LyricEditPanel: View {
     var body: some View {
         let lines = store.project.lines
         VStack(alignment: .leading, spacing: 0) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(L("Sửa lời")).font(.headline)
+            VStack(alignment: .leading, spacing: Theme.Space.xs) {
+                Text(L("Sửa lời")).sectionHeaderStyle()
                 Text(L("Sửa chữ trong từng dòng. Bấm Enter hoặc bấm ra ngoài để cập nhật vào karaoke."))
-                    .font(.caption).foregroundStyle(Theme.inkDim)
+                    .font(Theme.Typo.helper).foregroundStyle(Theme.inkFaint)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            .padding(.horizontal, Theme.Metric.pad)
-            .padding(.top, Theme.Metric.pad)
-            .padding(.bottom, 8)
+            .padding(.horizontal, Theme.Space.l)
+            .padding(.top, Theme.Space.l)
+            .padding(.bottom, Theme.Space.m)
 
             Divider().overlay(Theme.stroke)
 
@@ -44,13 +47,13 @@ struct LyricEditPanel: View {
 
             ScrollViewReader { proxy in
                 ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 6) {
+                    LazyVStack(alignment: .leading, spacing: Theme.Space.xs) {
                         ForEach(Array(lines.enumerated()), id: \.element.id) { i, line in
                             row(index: i, line: line)
                                 .id(line.id)
                         }
                     }
-                    .padding(Theme.Metric.pad)
+                    .padding(Theme.Space.l)
                 }
                 .onAppear { scrollToCurrent(proxy, lines) }
                 .onChange(of: currentLineIndex) { _ in
@@ -58,10 +61,18 @@ struct LyricEditPanel: View {
                     guard editingID == nil else { return }
                     scrollToCurrent(proxy, store.project.lines)
                 }
+                .onChange(of: playingIndex) { idx in
+                    // Vạch đỏ sang dòng mới → cuộn cho dòng đang hát nằm GIỮA danh sách (đang gõ thì thôi).
+                    guard editingID == nil, let idx, store.project.lines.indices.contains(idx) else { return }
+                    let id = store.project.lines[idx].id
+                    withAnimation(.easeInOut(duration: 0.25)) { proxy.scrollTo(id, anchor: .center) }
+                }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.white.opacity(0.02))
+        .background(LyricFollowTicker(lines: store.project.lines,
+                                      clipStart: store.project.karaokeClipStart,
+                                      playingIndex: $playingIndex))
         .onChange(of: focusedID) { newID in
             if let e = editingID, e != newID { finishEditing(e) }      // rời dòng cũ → cập nhật
             if let n = newID { beginEditing(n) }
@@ -75,12 +86,12 @@ struct LyricEditPanel: View {
     @ViewBuilder private func uncertainSection(_ lines: [LyricLine]) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 6) {
-                Image(systemName: "exclamationmark.triangle.fill").foregroundColor(.orange).font(.system(size: 11))
-                Text(String(format: L("Từ máy chưa chắc (%d)"), uncertain.count)).font(.system(size: 12, weight: .semibold))
+                Image(systemName: "exclamationmark.triangle.fill").foregroundColor(Theme.warning).font(.system(size: 11))
+                Text(String(format: L("Từ máy chưa chắc (%d)"), uncertain.count)).font(Theme.Typo.labelStrong)
                 Spacer()
             }
             Text(L("Karaoke đã canh giờ xong. Xem các từ dưới đây — chọn phương án đúng, hoặc bỏ qua nếu từ đang dùng đã đúng."))
-                .font(.caption2).foregroundStyle(Theme.inkDim).fixedSize(horizontal: false, vertical: true)
+                .font(Theme.Typo.helper).foregroundStyle(Theme.inkFaint).fixedSize(horizontal: false, vertical: true)
             ScrollView {
                 VStack(alignment: .leading, spacing: 5) {
                     ForEach(uncertain) { u in
@@ -88,7 +99,7 @@ struct LyricEditPanel: View {
                         HStack(spacing: 6) {
                             Button { onFocusLine(idx) } label: { Text("\(idx + 1)").font(.system(size: 11).monospacedDigit()) }
                                 .buttonStyle(.link).frame(width: 26, alignment: .trailing)
-                            Text(u.original + "?").font(.system(size: 12, weight: .semibold)).foregroundColor(.orange).underline()
+                            Text(u.original + "?").font(Theme.Typo.labelStrong).foregroundColor(Theme.warning).underline()
                             ForEach(u.alternatives, id: \.self) { alt in
                                 Button(alt) { onApplyAlternative(u, alt) }.controlSize(.small)
                             }
@@ -101,21 +112,22 @@ struct LyricEditPanel: View {
             }
             .frame(maxHeight: 150)
         }
-        .padding(.horizontal, Theme.Metric.pad).padding(.vertical, 8)
-        .background(Color.orange.opacity(0.06))
+        .padding(.horizontal, Theme.Space.l).padding(.vertical, Theme.Space.m)
+        .background(Theme.warning.opacity(0.06))
         Divider().overlay(Theme.stroke)
     }
 
     private func row(index i: Int, line: LyricLine) -> some View {
         let isCurrent = i == currentLineIndex
+        let isPlaying = i == playingIndex
         let editing = editingID == line.id
-        return HStack(alignment: .firstTextBaseline, spacing: 8) {
+        return HStack(alignment: .firstTextBaseline, spacing: Theme.Space.m) {
             Text("\(i + 1)")
                 .font(.system(size: 11, weight: .medium).monospacedDigit())
-                .foregroundStyle(isCurrent ? Theme.accent : Theme.inkDim)
+                .foregroundStyle(isCurrent || isPlaying ? Theme.accent : Theme.inkFaint)
                 .frame(width: 28, alignment: .trailing)
             if uncertain.contains(where: { $0.lineID == line.id }) {
-                Image(systemName: "exclamationmark.triangle.fill").font(.system(size: 10)).foregroundColor(.orange).help(L("Dòng này có từ máy chưa chắc"))
+                Image(systemName: "exclamationmark.triangle.fill").font(.system(size: 10)).foregroundColor(Theme.warning).help(L("Dòng này có từ máy chưa chắc"))
             }
             TextField("", text: binding(for: line), axis: .vertical)
                 .textFieldStyle(.plain)
@@ -124,10 +136,11 @@ struct LyricEditPanel: View {
                 .focused($focusedID, equals: line.id)
                 .onSubmit { commitAndLeave(line.id) }
                 .onExitCommand { cancelEditing(line.id) }
-                .padding(.horizontal, 9).padding(.vertical, 7)
-                .background(RoundedRectangle(cornerRadius: 7)
-                    .fill(isCurrent ? Theme.accentSoft : Color.white.opacity(0.05)))
-                .overlay(RoundedRectangle(cornerRadius: 7)
+                .padding(.horizontal, Theme.Space.m).padding(.vertical, Theme.Space.s)
+                // Dòng ĐANG HÁT (theo vạch đỏ) = sáng rõ; dòng đang CHỌN = viền nhấn.
+                .background(RoundedRectangle(cornerRadius: Theme.Radius.sm)
+                    .fill(isPlaying ? Theme.accent.opacity(0.30) : (isCurrent ? Theme.accentSoft : Color.white.opacity(0.04))))
+                .overlay(RoundedRectangle(cornerRadius: Theme.Radius.sm)
                     .stroke(editing ? Theme.accent : (isCurrent ? Theme.accent.opacity(0.45) : Theme.stroke),
                             lineWidth: editing ? 1.5 : 1))
         }
@@ -184,5 +197,37 @@ struct LyricEditPanel: View {
         guard lines.indices.contains(currentLineIndex) else { return }
         let id = lines[currentLineIndex].id
         DispatchQueue.main.async { withAnimation(.easeInOut(duration: 0.2)) { proxy.scrollTo(id, anchor: .center) } }
+    }
+}
+
+
+/// Theo dõi vạch đỏ cho bảng "Sửa lời": lúc ĐANG PHÁT đọc đồng hồ 4 lần/giây (đồng hồ không phát tín hiệu liên tục),
+/// lúc dừng chỉ tính lại khi tua (`seekGeneration`). Chỉ ghi `playingIndex` khi SANG DÒNG KHÁC → panel dựng lại ~1 lần /
+/// câu hát; `ContentView` không hề bị kéo theo.
+private struct LyricFollowTicker: View {
+    @EnvironmentObject var playback: PlaybackController
+    @EnvironmentObject var clock: PlaybackClock
+    let lines: [LyricLine]
+    let clipStart: TimeInterval
+    @Binding var playingIndex: Int?
+
+    var body: some View {
+        if playback.isPlaying {
+            TimelineView(.periodic(from: .now, by: 0.25)) { _ in probe }
+        } else {
+            probe
+        }
+    }
+
+    private var probe: some View {
+        Color.clear.frame(width: 0, height: 0)
+            .onAppear { update(clock.seconds) }
+            .onChange(of: clock.seconds) { update($0) }
+    }
+
+    private func update(_ t: TimeInterval) {
+        // t = giờ-timeline → giờ-bài (trừ điểm bắt đầu karaoke), giống `ContentView.playheadSongTime`.
+        let idx = TimingEditor.activeIndex(lines, at: max(0, t - clipStart))
+        if idx != playingIndex { playingIndex = idx }
     }
 }

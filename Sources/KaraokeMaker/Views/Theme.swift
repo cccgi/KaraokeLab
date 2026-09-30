@@ -198,3 +198,32 @@ private struct KMButtonBody: View {
         }
     }
 }
+
+// MARK: - Thanh tiêu đề panel (DESIGN_SYSTEM §9)
+
+/// Thanh tiêu đề 30pt dùng chung cho mọi panel / inspector: icon + tiêu đề IN HOA + nút bên phải.
+struct PanelHeader<Trailing: View>: View {
+    let title: String
+    var icon: String? = nil
+    var iconTint: Color = Theme.inkDim
+    @ViewBuilder var trailing: () -> Trailing
+
+    var body: some View {
+        HStack(spacing: Theme.Space.s) {
+            if let icon { Image(systemName: icon).font(.system(size: 11)).foregroundStyle(iconTint) }
+            Text(title).sectionHeaderStyle().lineLimit(1).truncationMode(.middle)
+            Spacer(minLength: Theme.Space.s)
+            trailing()
+        }
+        .padding(.horizontal, Theme.Space.l)
+        .frame(height: Theme.Metric.panelHeaderH)
+        .background(Theme.panel)
+        .overlay(alignment: .bottom) { Rectangle().fill(Theme.stroke).frame(height: 1) }
+    }
+}
+
+extension PanelHeader where Trailing == EmptyView {
+    init(title: String, icon: String? = nil, iconTint: Color = Theme.inkDim) {
+        self.init(title: title, icon: icon, iconTint: iconTint, trailing: { EmptyView() })
+    }
+}

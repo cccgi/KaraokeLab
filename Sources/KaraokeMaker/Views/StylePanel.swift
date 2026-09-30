@@ -61,7 +61,7 @@ struct StylePanel<AfterContent: View>: View {
                 contentSection
                 afterContent()
             }
-            .padding(.horizontal, 14).padding(.top, 12).padding(.bottom, 10)
+            .padding(.horizontal, Theme.Space.l).padding(.top, Theme.Space.l).padding(.bottom, Theme.Space.m)
 
             Picker("", selection: $mainTab) {
                 ForEach(MainTab.allCases, id: \.self) { t in
@@ -69,7 +69,7 @@ struct StylePanel<AfterContent: View>: View {
                 }
             }
             .pickerStyle(.segmented).labelsHidden()
-            .padding(.horizontal, 14).padding(.bottom, 8)
+            .padding(.horizontal, Theme.Space.l).padding(.bottom, Theme.Space.m)
 
             Divider().overlay(Theme.stroke)
 
@@ -84,7 +84,7 @@ struct StylePanel<AfterContent: View>: View {
                         layoutControls(.main)
                     }
                 }
-                .padding(14)
+                .padding(Theme.Space.l)
             }
         }
     }
@@ -94,11 +94,11 @@ struct StylePanel<AfterContent: View>: View {
     private var contentSection: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Text(L("Nội dung dòng")).font(.headline)
+                Text(L("Nội dung dòng")).sectionHeaderStyle()
                 Spacer()
                 if store.project.lines.indices.contains(currentLineIndex) {
                     Text(String(format: L("Dòng %d/%d"), currentLineIndex + 1, store.project.lines.count))
-                        .font(.caption).foregroundStyle(.secondary)
+                        .font(Theme.Typo.helper).foregroundStyle(Theme.inkDim)
                 }
             }
             if store.project.lines.indices.contains(currentLineIndex) {
@@ -114,7 +114,7 @@ struct StylePanel<AfterContent: View>: View {
                 .focused($lineFieldFocused)
                 .font(.body)
                 .frame(minHeight: 56, maxHeight: 100)
-                .overlay(RoundedRectangle(cornerRadius: 6).stroke(lineFieldFocused ? Theme.accent : Theme.strokeStrong))
+                .overlay(RoundedRectangle(cornerRadius: Theme.Radius.md).stroke(lineFieldFocused ? Theme.accent : Theme.strokeStrong))
                 .onChange(of: lineFieldFocused) { focused in
                     if focused {
                         guard store.project.lines.indices.contains(currentLineIndex) else { return }
@@ -130,7 +130,7 @@ struct StylePanel<AfterContent: View>: View {
                 }
             } else {
                 Text(L("Chọn một dòng ở danh sách hoặc trên timeline."))
-                    .font(.callout).foregroundStyle(.secondary)
+                    .font(Theme.Typo.helper).foregroundStyle(Theme.inkFaint)
             }
         }
     }
@@ -182,11 +182,11 @@ struct StylePanel<AfterContent: View>: View {
                     Button { saveCurrentAsPreset() } label: {
                         VStack(spacing: 2) {
                             Image(systemName: "plus")
-                            Text(L("Lưu kiểu")).font(.system(size: 8))
+                            Text(L("Lưu kiểu")).font(Theme.Typo.badge)
                         }
                         .frame(width: 54, height: 44)
-                        .background(RoundedRectangle(cornerRadius: 8).fill(Color.white.opacity(0.05)))
-                        .overlay(RoundedRectangle(cornerRadius: 8)
+                        .background(RoundedRectangle(cornerRadius: Theme.Radius.md).fill(Color.white.opacity(0.05)))
+                        .overlay(RoundedRectangle(cornerRadius: Theme.Radius.md)
                             .stroke(style: StrokeStyle(lineWidth: 1, dash: [3, 2]))
                             .foregroundStyle(.white.opacity(0.25)))
                     }
@@ -223,9 +223,9 @@ struct StylePanel<AfterContent: View>: View {
         }
         .frame(width: 96, height: 44)
         .padding(.horizontal, 4)
-        .background(RoundedRectangle(cornerRadius: 8).fill(bg))
-        .overlay(RoundedRectangle(cornerRadius: 8).stroke(.white.opacity(0.15)))
-        .contentShape(RoundedRectangle(cornerRadius: 8))
+        .background(RoundedRectangle(cornerRadius: Theme.Radius.md).fill(bg))
+        .overlay(RoundedRectangle(cornerRadius: Theme.Radius.md).stroke(Theme.strokeStrong))
+        .contentShape(RoundedRectangle(cornerRadius: Theme.Radius.md))
         .help(name)
     }
 
@@ -241,10 +241,10 @@ struct StylePanel<AfterContent: View>: View {
                 HStack {
                     Text(style.fontName).lineLimit(1)
                     Spacer()
-                    Image(systemName: "chevron.up.chevron.down").font(.caption2).foregroundStyle(.secondary)
+                    Image(systemName: "chevron.up.chevron.down").font(Theme.Typo.helper).foregroundStyle(Theme.inkFaint)
                 }
                 .padding(.horizontal, 8).padding(.vertical, 6)
-                .background(RoundedRectangle(cornerRadius: 6).fill(Theme.panelAlt))
+                .background(RoundedRectangle(cornerRadius: Theme.Radius.md).fill(Theme.panelAlt))
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -345,7 +345,7 @@ struct StylePanel<AfterContent: View>: View {
                 slider("Độ nhoè", style.shadowRadius, 0...40, suffix: "px") { v in edit("Độ nhoè bóng", t) { $0.shadowRadius = v } }
                 slider("Lệch ngang", style.shadowOffsetX, -30...30, suffix: "px") { v in edit("Lệch bóng ngang", t) { $0.shadowOffsetX = v } }
                 slider("Lệch dọc", style.shadowOffsetY, -30...30, suffix: "px") { v in edit("Lệch bóng dọc", t) { $0.shadowOffsetY = v } }
-                Text(L("Bóng vẽ cùng hình dạng & độ bo với viền.")).font(.caption2).foregroundStyle(.secondary)
+                Text(L("Bóng vẽ cùng hình dạng & độ bo với viền.")).font(Theme.Typo.helper).foregroundStyle(Theme.inkFaint)
             }
         }
     }
@@ -420,13 +420,13 @@ struct StylePanel<AfterContent: View>: View {
         let nearIdx = kfs.firstIndex { abs($0.t - songT) < 0.15 }
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 8) {
-                Text(L("Chuyển động khối chữ")).font(.caption.bold())
-                if !kfs.isEmpty { Text(String(format: L("%d mốc"), kfs.count)).font(.caption2).foregroundStyle(.secondary) }
+                Text(L("Chuyển động khối chữ")).font(Theme.Typo.labelStrong)
+                if !kfs.isEmpty { Text(String(format: L("%d mốc"), kfs.count)).font(Theme.Typo.helper).foregroundStyle(Theme.inkFaint) }
                 Spacer()
                 if !kfs.isEmpty {
                     Button { store.perform(L("Xoá chuyển động chữ")) { store.project.textKeyframes = [] } }
                         label: { Image(systemName: "arrow.uturn.backward") }
-                        .buttonStyle(.plain).font(.system(size: 11)).foregroundStyle(.secondary).help(L("Xoá hết"))
+                        .buttonStyle(.plain).font(.system(size: 11)).foregroundStyle(Theme.inkDim).help(L("Xoá hết"))
                 }
                 KeyframeControl(
                     hasAny: !kfs.isEmpty, atKeyframe: nearIdx != nil,
@@ -478,12 +478,12 @@ struct StylePanel<AfterContent: View>: View {
                     }
                     Spacer()
                 }
-                .buttonStyle(.plain).font(.system(size: 11)).foregroundStyle(.secondary)
+                .buttonStyle(.plain).font(.system(size: 11)).foregroundStyle(Theme.inkDim)
             }
             Text(kfs.isEmpty
                  ? L("Bấm ◇ để bắt đầu. Rồi dời vạch đỏ + kéo chữ trên màn hình xem trước → tự tạo mốc.")
                  : L("Dời vạch đỏ tới lúc khác, kéo chữ trên màn hình xem trước → tự ghi mốc."))
-                .font(.caption2).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                .font(Theme.Typo.helper).foregroundStyle(Theme.inkFaint).fixedSize(horizontal: false, vertical: true)
         }
     }
 
@@ -522,10 +522,10 @@ struct StylePanel<AfterContent: View>: View {
                 store.edit("Tốc độ quét chữ") { store.project.wipeCompletion = v }
             }
             HStack {
-                Text("Bù trước khi bấm T").font(.callout)
+                Text("Bù trước khi bấm T").font(Theme.Typo.label)
                 Spacer()
                 Text(String(format: "%.2f s", store.project.tapLeadIn))
-                    .font(.system(.caption, design: .monospaced)).foregroundStyle(.secondary)
+                    .font(.system(.caption, design: .monospaced)).foregroundStyle(Theme.inkDim)
             }
             HStack(spacing: 6) {
                 Button("−0.05") { setLeadIn(store.project.tapLeadIn - 0.05) }
@@ -543,8 +543,8 @@ struct StylePanel<AfterContent: View>: View {
     private func subgroup<C: View>(_ title: String, @ViewBuilder _ content: () -> C) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(L(title).uppercased())
-                .font(.caption2.weight(.semibold))
-                .foregroundStyle(.secondary)
+                .font(Theme.Typo.badge)
+                .foregroundStyle(Theme.inkDim)
             content()
         }
     }
@@ -557,7 +557,7 @@ struct StylePanel<AfterContent: View>: View {
         Button { set(!on) } label: {
             Text(label).font(font).underline(underline)
                 .frame(width: 26, height: 22)
-                .background(RoundedRectangle(cornerRadius: 5).fill(on ? Theme.accent : Theme.panelAlt))
+                .background(RoundedRectangle(cornerRadius: Theme.Radius.sm).fill(on ? Theme.accent : Theme.panelAlt))
                 .foregroundStyle(on ? Color.white : Color.primary)
         }
         .buttonStyle(.plain)
@@ -571,9 +571,9 @@ struct StylePanel<AfterContent: View>: View {
     private func slider(_ title: String, _ value: Double, _ range: ClosedRange<Double>, suffix: String, onChange: @escaping (Double) -> Void) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             HStack {
-                Text(L(title)).font(.callout)
+                Text(L(title)).font(Theme.Typo.label)
                 Spacer()
-                Text("\(Int(value.rounded()))\(suffix)").font(.caption).monospacedDigit().foregroundStyle(.secondary)
+                Text("\(Int(value.rounded()))\(suffix)").font(Theme.Typo.mono).foregroundStyle(Theme.inkDim)
             }
             DragSlider(value: value, range: range, onChange: onChange)
         }
@@ -582,9 +582,9 @@ struct StylePanel<AfterContent: View>: View {
     private func percentSlider(_ title: String, _ value: Double, _ range: ClosedRange<Double>, onChange: @escaping (Double) -> Void) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             HStack {
-                Text(L(title)).font(.callout)
+                Text(L(title)).font(Theme.Typo.label)
                 Spacer()
-                Text("\(Int((value * 100).rounded()))%").font(.caption).monospacedDigit().foregroundStyle(.secondary)
+                Text("\(Int((value * 100).rounded()))%").font(Theme.Typo.mono).foregroundStyle(Theme.inkDim)
             }
             DragSlider(value: value, range: range, onChange: onChange)
         }
