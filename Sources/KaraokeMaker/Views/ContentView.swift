@@ -178,7 +178,7 @@ struct ContentView: View {
 
     var body: some View {
         mainLayout
-        .frame(minWidth: 1380, minHeight: 780)
+        .frame(minWidth: 1180, minHeight: 720)
         .background(Theme.bg)
         .preferredColorScheme(.dark)
         .tint(Theme.accent)
@@ -293,15 +293,16 @@ struct ContentView: View {
 
             VSplitView {
                 HSplitView {
+                    // DESIGN_SYSTEM §9: preview luôn ưu tiên — 2 cột bên hẹp, preview giãn.
                     leftPanel
-                        .frame(minWidth: 430, idealWidth: 720, maxWidth: 900)
+                        .frame(minWidth: 340, idealWidth: 400, maxWidth: 560)
                         .clipped()
                     centerColumn
-                        .frame(minWidth: 460, maxWidth: .infinity)
+                        .frame(minWidth: 440, maxWidth: .infinity)
                         .layoutPriority(1)
                         .clipped()
                     inspectorColumn
-                        .frame(minWidth: 360, idealWidth: 450, maxWidth: 560)
+                        .frame(minWidth: 300, idealWidth: 340, maxWidth: 440)
                         .clipped()
                 }
                 .frame(minHeight: 280, maxHeight: .infinity)

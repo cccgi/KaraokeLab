@@ -1,42 +1,200 @@
 import SwiftUI
 import AppKit
 
-/// Bảng màu + kích thước tối kiểu editor chuyên nghiệp (CapCut / Final Cut).
+/// Hệ thiết kế của app — NGUỒN DUY NHẤT cho màu / chữ / khoảng cách / bo góc / chiều cao control.
+/// Quy chuẩn đầy đủ: `docs/DESIGN_SYSTEM.md`. Code giao diện không viết số / màu tay (ngoại lệ phải ghi chú).
+/// Chỉ chế độ tối (app ép `.dark`). Hiệu năng Intel > hiệu ứng: không bóng / blur cho panel, timeline, preview.
 enum Theme {
-    // Bề mặt (tối dần → sáng dần)
-    static let bg        = Color(red: 0.09, green: 0.09, blue: 0.10)   // nền cửa sổ
-    static let panel     = Color(red: 0.13, green: 0.13, blue: 0.145)  // cột / khu chính
-    static let panelAlt  = Color(red: 0.165, green: 0.165, blue: 0.18) // thanh công cụ / mục nổi
-    static let elevated  = Color(red: 0.22, green: 0.22, blue: 0.245)  // control / hover
-    static let stroke    = Color.white.opacity(0.07)
-    static let strokeStrong = Color.white.opacity(0.15)
+    // MARK: Bề mặt (tối dần → sáng dần)
+    static let bg        = Color(red: 0.09, green: 0.09, blue: 0.10)   // #171719 nền cửa sổ, quanh preview
+    static let panel     = Color(red: 0.13, green: 0.13, blue: 0.145)  // #212125 panel trái / inspector / timeline
+    static let panelAlt  = Color(red: 0.165, green: 0.165, blue: 0.18) // #2A2A2E toolbar, thanh tiêu đề panel
+    static let elevated  = Color(red: 0.22, green: 0.22, blue: 0.245)  // #38383E nền control (field, nút phụ)
+    static let stroke    = Color.white.opacity(0.07)                   // đường kẻ giữa panel / mục
+    static let strokeStrong = Color.white.opacity(0.14)                // viền field, viền khi hover
 
-    /// #2395c5 — MÀU NHẤN DUY NHẤT của app. Dùng cho nút chính, mục đang chọn, vạch đỏ… nhất quán.
-    static let accent    = Color(red: 0x23 / 255, green: 0x95 / 255, blue: 0xC5 / 255)
-    static let accentSoft = Color(red: 0x23 / 255, green: 0x95 / 255, blue: 0xC5 / 255).opacity(0.16)
+    // MARK: Chữ
+    static let ink         = Color.white.opacity(0.92)   // chữ chính
+    static let inkDim      = Color.white.opacity(0.60)   // chữ phụ, nhãn
+    static let inkFaint    = Color.white.opacity(0.40)   // gợi ý, đơn vị, thước timeline
+    static let inkDisabled = Color.white.opacity(0.25)   // chữ / icon bị khoá
+
+    // MARK: Nhấn + trạng thái
+    /// #2395c5 — MÀU NHẤN DUY NHẤT (màu thương hiệu, chủ dự án chọn): hành động chính, mục đang chọn, dòng đang hát, focus.
+    static let accent      = Color(red: 0x23 / 255, green: 0x95 / 255, blue: 0xC5 / 255)
+    static let accentSoft  = Color(red: 0x23 / 255, green: 0x95 / 255, blue: 0xC5 / 255).opacity(0.16)
+    static let accentHover = Color(red: 0x2F / 255, green: 0xA6 / 255, blue: 0xD8 / 255)
     /// #2395c5 cho code AppKit (Core Graphics).
-    static let accentNS  = NSColor(srgbRed: 0x23 / 255, green: 0x95 / 255, blue: 0xC5 / 255, alpha: 1)
+    static let accentNS    = NSColor(srgbRed: 0x23 / 255, green: 0x95 / 255, blue: 0xC5 / 255, alpha: 1)
+    static let hover       = Color.white.opacity(0.06)
+    static let pressed     = Color.white.opacity(0.10)
+    static let warning     = Color(red: 0xD6 / 255, green: 0xA4 / 255, blue: 0x45 / 255)   // từ chưa chắc, cảnh báo nhẹ
+    static let error       = Color(red: 0xE5 / 255, green: 0x53 / 255, blue: 0x4B / 255)   // lỗi, xoá
+    static let success     = Color(red: 0x45 / 255, green: 0xB3 / 255, blue: 0x7E / 255)   // "xong" (luôn kèm icon ✓)
+    /// Vạch đỏ (playhead) — giữ ĐỎ: mọi hướng dẫn trong app gọi nó là "vạch đỏ".
+    static let playhead    = Color(red: 0xE5 / 255, green: 0x48 / 255, blue: 0x4D / 255)
 
-    static let ink       = Color.white.opacity(0.92)
-    static let inkDim     = Color.white.opacity(0.55)
+    /// Bản NSColor cho AppKit / Core Graphics — `static let` để không tạo màu mới mỗi lần vẽ.
+    enum NS {
+        static let bg        = NSColor(srgbRed: 0.09, green: 0.09, blue: 0.10, alpha: 1)
+        static let panel     = NSColor(srgbRed: 0.13, green: 0.13, blue: 0.145, alpha: 1)
+        static let panelAlt  = NSColor(srgbRed: 0.165, green: 0.165, blue: 0.18, alpha: 1)
+        static let stroke    = NSColor.white.withAlphaComponent(0.07)
+        static let ink       = NSColor.white.withAlphaComponent(0.92)
+        static let inkDim    = NSColor.white.withAlphaComponent(0.60)
+        static let inkFaint  = NSColor.white.withAlphaComponent(0.40)
+        static let accent    = Theme.accentNS
+        static let warning   = NSColor(srgbRed: 0xD6 / 255, green: 0xA4 / 255, blue: 0x45 / 255, alpha: 1)
+        static let error     = NSColor(srgbRed: 0xE5 / 255, green: 0x53 / 255, blue: 0x4B / 255, alpha: 1)
+        static let success   = NSColor(srgbRed: 0x45 / 255, green: 0xB3 / 255, blue: 0x7E / 255, alpha: 1)
+        static let playhead  = NSColor(srgbRed: 0xE5 / 255, green: 0x48 / 255, blue: 0x4D / 255, alpha: 1)
+    }
 
-    // Kích thước nhất quán (một hệ, khỏi mỗi chỗ một số)
+    // MARK: Chữ (SF Pro hệ thống) — 9 cỡ chuẩn, không dùng cỡ khác trong editor
+    enum Typo {
+        static let title      = Font.system(size: 13, weight: .semibold)   // tên dự án, tiêu đề workspace
+        static let panelTitle = Font.system(size: 11, weight: .semibold)   // tiêu đề panel / mục (IN HOA — xem sectionHeaderStyle)
+        static let label      = Font.system(size: 12)                      // nhãn control, mục danh sách
+        static let labelStrong = Font.system(size: 12, weight: .semibold)  // chữ trên nút
+        static let body       = Font.system(size: 12)
+        static let helper     = Font.system(size: 11)                      // chú thích 1 dòng (màu inkFaint)
+        static let mono       = Font.system(size: 12).monospacedDigit()    // mã thời gian, số đo
+        static let sheetTitle = Font.system(size: 15, weight: .semibold)   // tiêu đề sheet / hộp thoại
+        static let homeTitle  = Font.system(size: 20, weight: .semibold)   // chỉ màn Home
+        static let badge      = Font.system(size: 10, weight: .semibold)   // huy hiệu nhỏ
+        static let icon       = Font.system(size: 13)                      // icon toolbar
+        static let iconSmall  = Font.system(size: 12)                      // icon trong panel
+    }
+
+    // MARK: Khoảng cách — thang duy nhất
+    enum Space {
+        static let xs: CGFloat = 4, s: CGFloat = 6, m: CGFloat = 8, l: CGFloat = 12, xl: CGFloat = 16, xxl: CGFloat = 24
+    }
+
+    // MARK: Bo góc — panel / preview phẳng; tối đa 8 trong editor
+    enum Radius {
+        static let none: CGFloat = 0, xs: CGFloat = 3, sm: CGFloat = 4, md: CGFloat = 6, lg: CGFloat = 8
+    }
+
+    // MARK: Chiều cao control
+    enum ControlH {
+        static let small: CGFloat = 22, regular: CGFloat = 26, large: CGFloat = 30
+    }
+
+    // MARK: Kích thước khung (giữ tên cũ — code cũ dùng `Theme.Metric.*`)
     enum Metric {
-        static let topbarH: CGFloat  = 46      // chiều cao thanh trên
+        static let topbarH: CGFloat  = 40      // chiều cao thanh trên
         static let railW: CGFloat    = 96      // bề rộng rail icon cột trái
-        static let pad: CGFloat      = 16      // padding khu vực
-        static let gap: CGFloat      = 10      // khoảng cách giữa control
-        static let radius: CGFloat   = 10      // bo góc thẻ / control
-        static let radiusSm: CGFloat = 7
+        static let pad: CGFloat      = 12      // padding khu vực (= Space.l)
+        static let gap: CGFloat      = 8       // khoảng cách giữa control (= Space.m)
+        static let radius: CGFloat   = 8       // popover / overlay nổi (= Radius.lg)
+        static let radiusSm: CGFloat = 6       // nút / thumbnail (= Radius.md)
+        static let panelHeaderH: CGFloat = 30  // thanh tiêu đề panel
     }
 }
 
 extension View {
     /// Tiêu đề một mục trong panel — dùng chung để mọi mục nhìn giống nhau.
     func sectionHeaderStyle() -> some View {
-        self.font(.system(size: 12, weight: .semibold))
+        self.font(Theme.Typo.panelTitle)
             .foregroundStyle(Theme.inkDim)
             .textCase(.uppercase)
             .kerning(0.4)
+    }
+}
+
+// MARK: - Nút 3 cấp (DESIGN_SYSTEM §7)
+
+/// Nút CHÍNH — nền nhấn. Tối đa 1 nút chính mỗi vùng (toolbar: Xuất; luồng tạo: Tạo; sheet Xuất: Xuất).
+struct KMPrimaryButtonStyle: ButtonStyle {
+    var large = false
+    func makeBody(configuration: Configuration) -> some View {
+        KMButtonBody(configuration: configuration, kind: .primary, height: large ? Theme.ControlH.large : Theme.ControlH.regular)
+    }
+}
+
+/// Nút PHỤ — nền control xám. `selected` = trạng thái BẬT của nút bật/tắt (nền nhấn nhạt + chữ nhấn).
+struct KMSecondaryButtonStyle: ButtonStyle {
+    var small = false
+    var selected = false
+    func makeBody(configuration: Configuration) -> some View {
+        KMButtonBody(configuration: configuration, kind: selected ? .selected : .secondary,
+                     height: small ? Theme.ControlH.small : Theme.ControlH.regular)
+    }
+}
+
+/// Nút ICON (cấp 3) — không nền, hiện nền khi hover. Luôn kèm `.help(...)`.
+struct KMIconButtonStyle: ButtonStyle {
+    var selected = false
+    func makeBody(configuration: Configuration) -> some View {
+        KMButtonBody(configuration: configuration, kind: selected ? .iconSelected : .icon, height: Theme.ControlH.small)
+    }
+}
+
+extension ButtonStyle where Self == KMPrimaryButtonStyle {
+    static var kmPrimary: KMPrimaryButtonStyle { KMPrimaryButtonStyle() }
+    static var kmPrimaryLarge: KMPrimaryButtonStyle { KMPrimaryButtonStyle(large: true) }
+}
+extension ButtonStyle where Self == KMSecondaryButtonStyle {
+    static var kmSecondary: KMSecondaryButtonStyle { KMSecondaryButtonStyle() }
+    static var kmSecondarySmall: KMSecondaryButtonStyle { KMSecondaryButtonStyle(small: true) }
+    static func kmToggle(_ on: Bool, small: Bool = true) -> KMSecondaryButtonStyle { KMSecondaryButtonStyle(small: small, selected: on) }
+}
+extension ButtonStyle where Self == KMIconButtonStyle {
+    static var kmIcon: KMIconButtonStyle { KMIconButtonStyle() }
+}
+
+/// Thân nút dùng chung — giữ trạng thái hover cục bộ (không đẩy gì lên view cha → không làm body lớn chạy lại).
+private struct KMButtonBody: View {
+    enum Kind { case primary, secondary, selected, icon, iconSelected }
+    let configuration: ButtonStyle.Configuration
+    let kind: Kind
+    let height: CGFloat
+    @Environment(\.isEnabled) private var isEnabled
+    @State private var hovering = false
+
+    var body: some View {
+        configuration.label
+            .font(kind == .icon || kind == .iconSelected ? Theme.Typo.icon : Theme.Typo.labelStrong)
+            .lineLimit(1)
+            .foregroundStyle(foreground)
+            .padding(.horizontal, kind == .icon || kind == .iconSelected ? Theme.Space.xs : Theme.Space.l)
+            .frame(minWidth: height, minHeight: height)
+            .background(RoundedRectangle(cornerRadius: kind == .icon || kind == .iconSelected ? Theme.Radius.sm : Theme.Radius.md)
+                .fill(background))
+            .overlay {
+                if kind == .secondary && isEnabled {
+                    RoundedRectangle(cornerRadius: Theme.Radius.md).strokeBorder(hovering ? Theme.strokeStrong : Theme.stroke)
+                }
+            }
+            .contentShape(Rectangle())
+            .onHover { hovering = $0 }
+    }
+
+    private var foreground: Color {
+        guard isEnabled else { return Theme.inkDisabled }
+        switch kind {
+        case .primary: return .white
+        case .selected, .iconSelected: return Theme.accent
+        case .secondary: return Theme.ink
+        case .icon: return hovering ? Theme.ink : Theme.inkDim
+        }
+    }
+
+    private var background: Color {
+        let p = configuration.isPressed
+        switch kind {
+        case .primary:
+            guard isEnabled else { return Theme.elevated.opacity(0.6) }
+            return p ? Theme.accent.opacity(0.85) : (hovering ? Theme.accentHover : Theme.accent)
+        case .secondary:
+            guard isEnabled else { return Theme.elevated.opacity(0.4) }
+            return p ? Theme.elevated.opacity(0.7) : (hovering ? Theme.elevated.opacity(1) : Theme.elevated.opacity(0.85))
+        case .selected, .iconSelected:
+            return p ? Theme.accent.opacity(0.26) : Theme.accentSoft
+        case .icon:
+            guard isEnabled else { return .clear }
+            return p ? Theme.pressed : (hovering ? Theme.hover : .clear)
+        }
     }
 }

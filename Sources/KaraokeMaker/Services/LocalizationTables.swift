@@ -114,6 +114,7 @@ private let enTable: [String: String] = [
     "Làm lại (⇧⌘Z)": "Redo (⇧⌘Z)",
     "Mở": "Open",
     "Lưu thành": "Save as",
+    "Có thay đổi chưa lưu": "Unsaved changes",
     "Tên dự án": "Project name",
     "Mở project mới trong tab khác": "Open a new project in another tab",
     "Mở project…": "Open project…",
