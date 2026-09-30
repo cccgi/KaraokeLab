@@ -114,24 +114,29 @@ extension ContentView {
         Button {
             withAnimation(.easeInOut(duration: 0.18)) { leftPanelTab = tab }
         } label: {
-            VStack(spacing: 4) {
+            VStack(spacing: Theme.Space.xs) {
                 ZStack(alignment: .topTrailing) {
-                    Image(systemName: icon).font(.system(size: 17, weight: .regular))
+                    Image(systemName: icon).font(.system(size: 15))
                     if done {
-                        Circle().fill(Color.green).frame(width: 6, height: 6).offset(x: 5, y: -3)
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 9, weight: .bold)).foregroundStyle(Theme.success)
+                            .background(Circle().fill(Theme.panel))
+                            .offset(x: 7, y: -4)
                     }
                 }
-                Text(L(title)).font(.system(size: 10.5, weight: selected ? .semibold : .regular))
-                    .lineLimit(1)
+                Text(L(title)).font(.system(size: 11, weight: selected ? .semibold : .regular))
+                    .lineLimit(1).minimumScaleFactor(0.85)
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 9)
+            .padding(.vertical, Theme.Space.s)
             .foregroundStyle(selected ? Theme.accent : Theme.inkDim)
-            .background(RoundedRectangle(cornerRadius: Theme.Metric.radiusSm)
+            .background(RoundedRectangle(cornerRadius: Theme.Radius.sm)
                 .fill(selected ? Theme.accentSoft : Color.clear))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .help(L(title))
+        .accessibilityLabel(L(title) + (done ? " ✓" : ""))
     }
 
     @ViewBuilder
@@ -154,7 +159,7 @@ extension ContentView {
                 leftTabButton("Sóng nhạc", icon: "waveform", tab: .visualizer, done: false)
                 leftTabButton("Media", icon: "folder", tab: .files, done: false)
             }
-            .padding(Theme.Metric.gap)
+            .padding(.horizontal, Theme.Space.m).padding(.vertical, Theme.Space.s)
 
             Divider().overlay(Theme.stroke)
 
@@ -214,7 +219,6 @@ extension ContentView {
                     .padding(Theme.Metric.pad).frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(Color.white.opacity(0.02))
             case .text:
                 ScrollView {
                     VStack(alignment: .leading, spacing: Theme.Metric.pad) {
@@ -223,7 +227,6 @@ extension ContentView {
                     .padding(Theme.Metric.pad).frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(Color.white.opacity(0.02))
             case .visualizer:
                 ScrollView {
                     VStack(alignment: .leading, spacing: Theme.Metric.pad) {
@@ -232,7 +235,6 @@ extension ContentView {
                     .padding(Theme.Metric.pad).frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(Color.white.opacity(0.02))
             }
         }
         .frame(maxHeight: .infinity)
@@ -270,7 +272,6 @@ extension ContentView {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.white.opacity(0.02))
     }
 
     /// Ô "Chữ / Text" ở panel trái — thêm lớp chữ (như lớp ảnh).
@@ -281,7 +282,7 @@ extension ContentView {
                 Label(L("Thêm 1 lớp chữ"), systemImage: "textformat")
                     .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.borderedProminent).tint(Theme.accent).controlSize(.regular)
+            .buttonStyle(.kmPrimary)
             .onDrag { NSItemProvider(object: Self.newTextDragToken as NSString) }
 
             Text(L("Bấm để thêm ở vạch đỏ, hoặc KÉO nút này thả xuống làn lớp đè trên timeline. Lớp chữ hoạt động như lớp ảnh: kéo–giãn–xoay trên màn hình xem trước, chỉnh bên phải."))
@@ -328,7 +329,6 @@ extension ContentView {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.white.opacity(0.02))
     }
 
     /// Ô "+ Nhập file" — khi kho TRỐNG thì chiếm cả khu (giống ảnh tham khảo), khi đã có
@@ -437,7 +437,7 @@ extension ContentView {
         VStack(spacing: 8) {
             Image(systemName: "square.and.arrow.down").font(.title2).foregroundStyle(.secondary)
             Button(L("Chọn file nhạc (MP3 / WAV)…")) { importAudio() }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.kmPrimary)
             Text(L("…hoặc kéo file nhạc từ Finder thả vào đây."))
                 .font(.caption2).foregroundStyle(.secondary)
         }
@@ -454,13 +454,13 @@ extension ContentView {
     @ViewBuilder
     var stemsInput: some View {
         VStack(alignment: .leading, spacing: 8) {
-            stemDropRow("🥁  Beat (không lời)", url: $userBeatURL,
+            stemDropRow("Beat (không lời)", icon: "music.note.list", url: $userBeatURL,
                         targeted: $beatDropTargeted, slot: .beat)
-            stemDropRow("🎤  Vocal (chỉ giọng)", url: $userVocalURL,
+            stemDropRow("Vocal (chỉ giọng)", icon: "music.mic", url: $userVocalURL,
                         targeted: $vocalDropTargeted, slot: .vocal)
             if userBeatURL != nil, userVocalURL != nil {
                 Button(beatSepProxy.isRunning ? L("Đang xử lý…") : L("Dùng 2 file này")) { adoptStems() }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(.kmPrimary)
                     .frame(maxWidth: .infinity)
                     .disabled(beatSepProxy.isRunning)
             }
@@ -480,18 +480,19 @@ extension ContentView {
     }
 
     @ViewBuilder
-    func stemDropRow(_ title: String, url: Binding<URL?>,
+    func stemDropRow(_ title: String, icon: String, url: Binding<URL?>,
                              targeted: Binding<Bool>, slot: StemSlot) -> some View {
-        HStack(spacing: 8) {
+        HStack(spacing: Theme.Space.m) {
+            Image(systemName: icon).font(Theme.Typo.iconSmall).foregroundStyle(Theme.inkDim).frame(width: 16)
             VStack(alignment: .leading, spacing: 2) {
-                Text(L(title)).font(.caption.weight(.medium))
+                Text(L(title)).font(Theme.Typo.labelStrong)
                 Text(url.wrappedValue?.lastPathComponent ?? L("kéo file vào, hoặc bấm Chọn"))
                     .font(.caption2).foregroundStyle(.secondary)
                     .lineLimit(1).truncationMode(.middle)
             }
             Spacer()
             if url.wrappedValue != nil {
-                Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
+                Image(systemName: "checkmark.circle.fill").foregroundStyle(Theme.success)
             }
             Button(L("Chọn…")) {
                 if let u = FilePanels.chooseAudioToImport() { url.wrappedValue = u }
@@ -540,14 +541,15 @@ extension ContentView {
     // MARK: Cột trái — các bước tạo karaoke
 
     var aiStepsPanel: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            Text(L("Tạo Karaoke bằng AI")).font(.title3.bold())
+        VStack(alignment: .leading, spacing: Theme.Space.l) {
+            Text(L("Tạo Karaoke bằng AI")).sectionHeaderStyle()
 
             stepBlock(1, "Nhập file audio", done: aiAudioOK) { stepAudioContent }
 
             // ② Dán lời → tách nhạc + canh giờ → timeline.
             // ② Chọn cách tạo Karaoke: CÓ LỜI (dán/nhập lời → canh giờ) hoặc KHÔNG CẦN LỜI (máy tự nhận dạng + tự canh giờ).
             if aiAudioOK {
+                Divider().overlay(Theme.stroke)
                 stepBlock(2, createMode == nil ? "Chọn cách tạo Karaoke" : (createMode == .hasLyrics ? "Dán lời & tạo karaoke" : "Tự động tạo Karaoke"),
                           done: aiLinesOK) {
                     createModeContent
@@ -571,20 +573,19 @@ extension ContentView {
             Button {
                 expanded.wrappedValue.toggle()
             } label: {
-                HStack(spacing: 6) {
+                HStack(spacing: Theme.Space.s) {
                     Image(systemName: expanded.wrappedValue ? "chevron.down" : "chevron.right")
-                        .font(.caption2).foregroundStyle(.secondary)
-                    Text(title).font(.headline)
+                        .font(.system(size: 10, weight: .semibold)).foregroundStyle(Theme.inkFaint).frame(width: 10)
+                    Text(title).font(Theme.Typo.labelStrong).foregroundStyle(Theme.ink)
                     Spacer()
                 }
+                .frame(height: Theme.ControlH.small)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             if expanded.wrappedValue { content() }
         }
-        .padding(10)
-        .background(RoundedRectangle(cornerRadius: 8).fill(Color.white.opacity(0.03)))
-        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Theme.stroke))
+        .padding(.vertical, Theme.Space.xs)
     }
 
     /// Nội dung bước ②: 2 lựa chọn RÕ RÀNG rồi mới tới đường đã chọn (không gộp chung 1 trang nhập lời).
@@ -793,24 +794,23 @@ extension ContentView {
     @ViewBuilder
     func stepBlock<C: View>(_ n: Int, _ title: String, done: Bool, @ViewBuilder _ content: () -> C) -> some View {
         // Mỗi bước 1 THẺ riêng — tách bạch, đỡ cảm giác "1 khối chữ dài" (giống CapCut chia panel rõ ràng).
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 8) {
+        // DESIGN_SYSTEM §9: bước = tiêu đề đánh số + nội dung, PHẲNG (không thẻ); các bước ngăn nhau bằng đường kẻ.
+        VStack(alignment: .leading, spacing: Theme.Space.m) {
+            HStack(spacing: Theme.Space.m) {
                 ZStack {
-                    Circle().fill(done ? Color.green : Theme.accent).frame(width: 22, height: 22)
+                    Circle().fill(done ? Theme.success : Theme.accent).frame(width: 20, height: 20)
                     if done {
-                        Image(systemName: "checkmark").font(.caption2.bold()).foregroundStyle(.white)
+                        Image(systemName: "checkmark").font(.system(size: 10, weight: .bold)).foregroundStyle(.white)
                     } else {
-                        Text("\(n)").font(.caption.bold()).foregroundStyle(.white)
+                        Text("\(n)").font(Theme.Typo.badge).foregroundStyle(.white)
                     }
                 }
-                Text(L(title)).font(.headline)
+                Text(L(title)).font(Theme.Typo.title).foregroundStyle(Theme.ink)
                 Spacer()
             }
-            content().padding(.leading, 30)
+            content().padding(.leading, 28)
         }
-        .padding(14)
-        .background(RoundedRectangle(cornerRadius: 10).fill(Theme.panelAlt))
-        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Theme.stroke))
+        .padding(.vertical, Theme.Space.s)
     }
 
     /// "Nhập lại" ở bước ② (thủ công) — xoá lời + dòng.

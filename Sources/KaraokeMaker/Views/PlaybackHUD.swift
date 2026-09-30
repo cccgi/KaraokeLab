@@ -34,61 +34,60 @@ struct TransportBar: View {
     }
 
     private var transportContent: some View {
-        HStack(spacing: 14) {
-            Button { playback.seekBy(-5) } label: {
-                Image(systemName: "gobackward.5").font(.title3)
-            }
-            .buttonStyle(.borderless).disabled(!canTransport)
+        // Thanh phát PHẲNG ngay dưới preview (không thẻ) — DESIGN_SYSTEM §11.
+        HStack(spacing: Theme.Space.l) {
+            Button { playback.seekBy(-5) } label: { Image(systemName: "gobackward.5") }
+                .buttonStyle(.kmIcon).disabled(!canTransport).help(L("Lùi 5 giây"))
 
             Button { playback.togglePlayPause() } label: {
                 Image(systemName: playback.isPlaying ? "pause.circle.fill" : "play.circle.fill")
-                    .font(.system(size: 34))
-                    .foregroundStyle(canTransport ? Theme.accent : Color.secondary)
+                    .font(.system(size: 30))
+                    .foregroundStyle(canTransport ? Theme.accent : Theme.inkDisabled)
             }
             .buttonStyle(.borderless).disabled(!canTransport)
+            .help(playback.isPlaying ? L("Dừng (Space)") : L("Phát (Space)"))
 
-            Button { playback.seekBy(5) } label: {
-                Image(systemName: "goforward.5").font(.title3)
-            }
-            .buttonStyle(.borderless).disabled(!canTransport)
+            Button { playback.seekBy(5) } label: { Image(systemName: "goforward.5") }
+                .buttonStyle(.kmIcon).disabled(!canTransport).help(L("Tới 5 giây"))
 
             karaokeToggle
 
             HStack(spacing: 0) {
                 Text(TimeFormatting.clock(clock.seconds)).foregroundColor(Theme.ink)
-                Text(" / \(TimeFormatting.clock(timelineTotal))").foregroundColor(Theme.inkDim)
+                Text(" / \(TimeFormatting.clock(timelineTotal))").foregroundColor(Theme.inkFaint)
             }
-            .font(.system(.callout, design: .monospaced))
+            .font(Theme.Typo.mono)
             .layoutPriority(1)
 
             Slider(
                 value: Binding(get: { clock.seconds }, set: { onSeek($0) }),
                 in: 0...max(timelineTotal, 0.01)
             )
+            .controlSize(.small)
             .disabled(!canTransport)
         }
-        .padding(.horizontal, 14).padding(.vertical, 8)
-        .background(RoundedRectangle(cornerRadius: Theme.Metric.radius).fill(Theme.panel))
+        .padding(.horizontal, Theme.Space.xs)
+        .frame(height: 40)
     }
 
     private var karaokeToggle: some View {
         let on = karaokeOn && karaokeAvailable
         return Button(action: onKaraoke) {
-            HStack(spacing: 7) {
-                Image(systemName: on ? "music.mic" : "music.mic.circle").font(.title3)
-                Text("Karaoke").font(.callout.weight(.bold))
+            HStack(spacing: Theme.Space.s) {
+                Image(systemName: "music.mic").font(Theme.Typo.icon)
+                Text("Karaoke").font(Theme.Typo.labelStrong)
                 Text(on ? L("BẬT") : L("TẮT"))
-                    .font(.caption.weight(.heavy))
-                    .padding(.horizontal, 6).padding(.vertical, 2)
-                    .background(Capsule().fill(on ? Color.white.opacity(0.28)
-                                                 : Color.white.opacity(0.12)))
+                    .font(Theme.Typo.badge)
+                    .padding(.horizontal, 5).padding(.vertical, 1)
+                    .background(RoundedRectangle(cornerRadius: Theme.Radius.xs)
+                        .fill(on ? Color.white.opacity(0.25) : Color.white.opacity(0.10)))
             }
-            .padding(.horizontal, 14)
-            .frame(height: 34)
-            .background(Capsule().fill(on ? Theme.accent : Theme.elevated))
-            .overlay(Capsule().stroke(on ? Color.clear : Theme.strokeStrong, lineWidth: 1))
-            .foregroundStyle(on ? Color.white : (karaokeAvailable ? Theme.ink : Theme.inkDim))
-            .contentShape(Capsule())
+            .padding(.horizontal, Theme.Space.m)
+            .frame(height: Theme.ControlH.regular)
+            .background(RoundedRectangle(cornerRadius: Theme.Radius.md).fill(on ? Theme.accent : Theme.elevated))
+            .overlay(RoundedRectangle(cornerRadius: Theme.Radius.md).stroke(on ? Color.clear : Theme.stroke, lineWidth: 1))
+            .foregroundStyle(on ? Color.white : (karaokeAvailable ? Theme.ink : Theme.inkDisabled))
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .disabled(!karaokeAvailable)

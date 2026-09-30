@@ -20,12 +20,15 @@ extension ContentView {
                            })
                 .frame(maxHeight: .infinity)
                 .clipped()
-                .clipShape(RoundedRectangle(cornerRadius: Theme.Metric.radius))
-                .shadow(color: .black.opacity(0.4), radius: 12, y: 5)
+                // PHẲNG: không bo góc / không bóng quanh preview (DESIGN_SYSTEM §11) — preview vẽ lại mỗi khung hình,
+                // bóng mờ trên layer đổi liên tục làm nặng máy Intel.
                 .overlay(alignment: .topTrailing) {
-                    Toggle(L("Vạch an toàn"), isOn: $showSafeArea)
-                        .toggleStyle(.button).controlSize(.small)
-                        .padding(Theme.Metric.gap)
+                    Button { showSafeArea.toggle() } label: {
+                        Label(L("Vạch an toàn"), systemImage: "rectangle.dashed")
+                    }
+                    .buttonStyle(.kmToggle(showSafeArea))
+                    .help(L("Hiện / ẩn vùng an toàn của khung hình"))
+                    .padding(Theme.Space.m)
                 }
                 .overlay { if isFreshProject { onboardingCard } }
             transportBar
@@ -43,24 +46,21 @@ extension ContentView {
             && store.project.backgroundMedia == nil
     }
 
+    /// Trạng thái trống của dự án mới — 1 icon, 1 dòng, 1 nút (DESIGN_SYSTEM §19). Nền đặc, không blur / bóng.
     var onboardingCard: some View {
-        VStack(spacing: 14) {
-            Image(systemName: "music.mic").font(.system(size: 34)).foregroundStyle(Theme.accent)
-            Text(L("Bắt đầu làm karaoke")).font(.headline)
-            VStack(alignment: .leading, spacing: 8) {
-                onboardStep("1", "Kéo file nhạc vào ô 'File của bạn' (cột trái) hoặc thả xuống timeline.")
-                onboardStep("2", "Sang tab 'Tạo Karaoke' → dán lời bài hát.")
-                onboardStep("3", "Bấm tạo karaoke, rồi tinh chỉnh trên timeline.")
-            }
-            .font(.callout)
-            Text(L("Ảnh / video / logo: kéo xuống timeline để đè lên video."))
-                .font(.caption).foregroundStyle(.secondary)
+        VStack(spacing: Theme.Space.m) {
+            Image(systemName: "music.mic").font(.system(size: 28)).foregroundStyle(Theme.inkFaint)
+            Text(L("Bắt đầu làm karaoke")).font(Theme.Typo.title).foregroundStyle(Theme.ink)
+            Text(L("Chọn file nhạc, rồi dán lời hoặc để máy tự tạo lời."))
+                .font(Theme.Typo.helper).foregroundStyle(Theme.inkDim).multilineTextAlignment(.center)
+            Button(L("Chọn file nhạc (MP3 / WAV)…")) { importAudio() }
+                .buttonStyle(.kmPrimary)
+                .padding(.top, Theme.Space.xs)
         }
-        .padding(22)
-        .frame(maxWidth: 380)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
-        .overlay(RoundedRectangle(cornerRadius: 14).stroke(.white.opacity(0.12)))
-        .shadow(color: .black.opacity(0.35), radius: 20, y: 8)
+        .padding(Theme.Space.xxl)
+        .frame(maxWidth: 340)
+        .background(RoundedRectangle(cornerRadius: Theme.Radius.lg).fill(Theme.panelAlt))
+        .overlay(RoundedRectangle(cornerRadius: Theme.Radius.lg).stroke(Theme.stroke))
     }
 
     func onboardStep(_ n: String, _ text: String) -> some View {
@@ -77,14 +77,12 @@ extension ContentView {
     /// Bọc 1 nhóm chức năng thành THẺ RIÊNG (nền mờ + viền mỏng) — cùng ngôn ngữ hình ảnh với
     /// `stepBlock` bên ngoài, tách bạch từng khối thay vì 1 cột chữ liền mạch.
     func subCard<C: View>(_ title: String, @ViewBuilder _ content: () -> C) -> some View {
-        VStack(alignment: .leading, spacing: Theme.Metric.gap) {
+        // Mục PHẲNG: tiêu đề mục + nội dung (không thẻ bo viền) — DESIGN_SYSTEM §6/§9.
+        VStack(alignment: .leading, spacing: Theme.Space.m) {
             Text(L(title)).sectionHeaderStyle()
             content()
         }
-        .padding(Theme.Metric.gap + 2)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: Theme.Metric.radiusSm).fill(Color.white.opacity(0.03)))
-        .overlay(RoundedRectangle(cornerRadius: Theme.Metric.radiusSm).stroke(Theme.stroke))
     }
 
     /// Bước 3 trong quy trình giờ chỉ CHỈ ĐƯỜNG — điều khiển thật đã dời sang tab

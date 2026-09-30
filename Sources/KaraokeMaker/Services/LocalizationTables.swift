@@ -115,6 +115,10 @@ private let enTable: [String: String] = [
     "Mở": "Open",
     "Lưu thành": "Save as",
     "Có thay đổi chưa lưu": "Unsaved changes",
+    "Chọn file nhạc, rồi dán lời hoặc để máy tự tạo lời.": "Choose a music file, then paste lyrics or let the app write them.",
+    "Hiện / ẩn vùng an toàn của khung hình": "Show / hide the frame's safe area",
+    "Dừng (Space)": "Pause (Space)",
+    "Phát (Space)": "Play (Space)",
     "Tên dự án": "Project name",
     "Mở project mới trong tab khác": "Open a new project in another tab",
     "Mở project…": "Open project…",
@@ -721,7 +725,9 @@ private let enTable: [String: String] = [
     "Ẩn xem trước": "Hide preview",
     "Ẩn/hiện nhóm": "Show/hide group",
     "🎤  Vocal (chỉ giọng)": "🎤  Vocal (voice only)",
+    "Vocal (chỉ giọng)": "Vocal (voice only)",
     "🥁  Beat (không lời)": "🥁  Beat (no vocals)",
+    "Beat (không lời)": "Beat (no vocals)",
     "Xong": "Done",
 
     // MARK: Tab bảng sửa (2026-09-10)

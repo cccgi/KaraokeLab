@@ -236,20 +236,21 @@ extension ContentView {
             case .image: return "photo"
             }
         }()
-        return VStack(spacing: 3) {
+        return VStack(spacing: Theme.Space.xs) {
             ZStack {
-                RoundedRectangle(cornerRadius: 6).fill(Theme.elevated)
-                if item.kind == .image, let url = item.resolveURL(), let ns = NSImage(contentsOf: url) {
+                RoundedRectangle(cornerRadius: Theme.Radius.md).fill(Theme.elevated)
+                // Ảnh thu nhỏ lấy từ cache (giải mã 1 lần, thu nhỏ) — trước đây giải mã NGUYÊN file ảnh mỗi lần body chạy lại.
+                if item.kind == .image, let url = item.resolveURL(), let ns = MediaThumbCache.image(for: url) {
                     Image(nsImage: ns).resizable().aspectRatio(contentMode: .fill)
-                        .frame(width: size, height: h).clipShape(RoundedRectangle(cornerRadius: 6))
+                        .frame(width: size, height: h).clipShape(RoundedRectangle(cornerRadius: Theme.Radius.md))
                 } else {
                     Image(systemName: icon)
                         .font(.system(size: size * 0.3))
-                        .foregroundStyle(item.kind == .audio ? Theme.accent : .secondary)
+                        .foregroundStyle(item.kind == .audio ? Theme.accent : Theme.inkDim)
                 }
             }
             .frame(width: size, height: h)
-            Text(item.name).font(.system(size: 9)).foregroundStyle(.secondary)
+            Text(item.name).font(Theme.Typo.helper).foregroundStyle(Theme.inkDim)
                 .lineLimit(1).truncationMode(.middle).frame(width: size)
         }
         .onDrag { NSItemProvider(object: item.id.uuidString as NSString) }
@@ -359,5 +360,26 @@ extension ContentView {
         let fitBase = min(cw / iw, ch / ih)
         let fillBase = max(cw / iw, ch / ih)
         return fitBase > 0 ? Double(fillBase / fitBase) : 1.9
+    }
+}
+
+
+/// Cache ảnh thu nhỏ cho kho media: giải mã + thu nhỏ bằng ImageIO đúng 1 lần mỗi file (theo đường dẫn + ngày sửa),
+/// để `body` chạy lại không đọc lại file. NSCache tự nhả bộ nhớ khi máy thiếu RAM.
+enum MediaThumbCache {
+    private static let cache: NSCache<NSString, NSImage> = { let c = NSCache<NSString, NSImage>(); c.countLimit = 300; return c }()
+
+    static func image(for url: URL, maxPixel: Int = 320) -> NSImage? {
+        let mod = (try? url.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate)?.timeIntervalSince1970 ?? 0
+        let key = "\(url.path)|\(mod)|\(maxPixel)" as NSString
+        if let hit = cache.object(forKey: key) { return hit }
+        guard let src = CGImageSourceCreateWithURL(url as CFURL, nil) else { return nil }
+        let opts: [CFString: Any] = [kCGImageSourceCreateThumbnailFromImageAlways: true,
+                                     kCGImageSourceCreateThumbnailWithTransform: true,
+                                     kCGImageSourceThumbnailMaxPixelSize: maxPixel]
+        guard let cg = CGImageSourceCreateThumbnailAtIndex(src, 0, opts as CFDictionary) else { return nil }
+        let img = NSImage(cgImage: cg, size: NSSize(width: cg.width, height: cg.height))
+        cache.setObject(img, forKey: key)
+        return img
     }
 }
