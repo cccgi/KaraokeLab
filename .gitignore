@@ -17,3 +17,8 @@ dist-release/
 # tải lại UVR-MDX-NET-Voc_FT / mdx23c-vocinst / mms-aligner theo README) rồi chép đúng
 # đường dẫn dưới đây trước khi `swift build` — Package.swift cần file THẬT tồn tại trên đĩa.
 /Sources/KaraokeMaker/Resources/*.onnx
+# Thư mục build theo kiến trúc của Scripts/package-release.sh (~800 MB mỗi cái) — không đưa lên git.
+/.build-release-arm64/
+/.build-release-x86_64/
+# Thử nghiệm whisper.cpp cũ (09/2026), Package.swift KHÔNG dùng — chỉ nằm trên iMac.
+/vendor/whisper.xcframework/

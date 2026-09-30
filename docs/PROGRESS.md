@@ -103,6 +103,34 @@ bằng mắt, nhưng `ps` vẫn báo ~250%).
 - Build OK (`swift build -c release`, chỉ warning cũ không liên quan). File đổi: CHỈ
   `Services/AutoLyrics/AutoKaraokeFlow.swift` (thêm 1 field + throttle 5 dòng trong `runAll`).
 
+### 2026-09-29 (khuya) — THỐNG KÊ G TRÊN DEV2 + KHO KIỂM CHỨNG NGẦM (lab, app KHÔNG đổi)
+- Bộ chọn G vs A trên 41 bài DEV2, tính theo bài: CV lặp 50 lần (G hơn cả 50), bỏ-1-bài 31 thắng / 5 hoà / 5 thua, bootstrap −0,67 điểm
+  [−0,89; −0,46], p = 5e-6; lợi thế vẫn còn khi làm lại cả bước chọn đặc trưng (−0,64). Kết luận: bằng chứng MẠNH cho G trên DEV2 —
+  nhưng DEV2 không phải bộ thử độc lập → chính thức vẫn là A, G là ứng viên. HOLDOUT3 không quyết định gì (0 bài).
+- `viet_lyrics_lab/shadow_pool/`: tự quét bài MỚI có lời đáng tin (dự án .kbproj, .srt cạnh file nhạc, CapCut), tự loại lời do máy nghe
+  ("Không cần lời", phụ đề tự động CapCut), chấm A/E/G im lặng; đủ 15 bài mới áp luật chọn đã ghi sẵn. Hiện 0 bài. Lịch chạy hằng đêm
+  đã soạn sẵn nhưng CHƯA bật (cần chủ app đồng ý).
+
+### 2026-09-29 (tối) — HOLDOUT3: KHÔNG ĐỦ BÀI MỚI (lab, app KHÔNG đổi)
+- Quét toàn bộ máy (57 dự án .kbproj, 71 phụ đề, 18 dự án CapCut có lời, file lời, 241 bản thu chưa có lời): mọi bài có lời đều đã dùng
+  ở DEV / TEST / DEV2 / HOLDOUT cũ → HOLDOUT3 = 0 bài → KHÔNG kết luận được A hay G. Hệ thống cuối vẫn là A.
+- Đã dựng sẵn công cụ `viet_lyrics_lab/holdout3/` (nhận bài mới → kiểm cặp lời/audio → đóng băng md5 → chạy A/E/G một lần, luật chọn ghi
+  trước). Cần chủ app cung cấp ≥ 20 bài MỚI kèm lời của chính bản thu đó (.kbproj "Tôi có lời" hoặc .srt + audio cùng tên).
+
+### 2026-09-29 (sau) — DEV2 + BỘ CHỌN G + HOLDOUT2 (lab, app KHÔNG đổi)
+- 41 bài của bộ thử cũ thành DEV2 để học bộ chọn mới G: DEV2 5,94 % (A 6,58 %). Trên HOLDOUT2 (12 bài) G 9,17 % vs A 9,34 % — gần như
+  bằng nhau → giữ A. Chi tiết `~/viet_lyrics_lab/HANDOFF.md`.
+
+### 2026-09-29 — KẾT QUẢ CUỐI: CHẤM CẢ BÀI + BỘ THỬ 45 BÀI MỚI (lab, app KHÔNG đổi)
+- Hệ tốt nhất (lab) = A: Qwen 0.6B+1.7B + 1.7B cửa sổ lệch + Whisper lời hát (nhạc đầy đủ + giọng tách) + bộ chọn học trọng số.
+- Lỗi chữ cả bài (GOLD): bộ thử bài Whisper chưa thấy 5,99 % (27 bài), cả bộ thử 6,58 % (41 bài, trung vị 5,0 %); app hiện tại ~14,7 %.
+- Whisper vẫn chỉ trong lab (bản quyền dữ liệu chưa rõ). Chi tiết: `~/viet_lyrics_lab/HANDOFF.md`.
+
+### 2026-09-28 (khuya) — CHẤM CẢ BÀI + BỘ THỬ TỪ PHỤ ĐỀ CỦA USER (lab, app KHÔNG đổi) — TẠM DỪNG, ĐÃ ĐÓNG GÓI
+- Lab `~/viet_lyrics_lab/fullsong/`: bộ chấm cả bài không phụ thuộc ranh giới câu + mức tin cậy GOLD/SILVER/UNSCORABLE/STRESS (nguồn thứ 2 =
+  71 file phụ đề .srt/.ass user tự xuất). Bộ thử ~45 bài cover mới đang tách giọng/nghe (dừng giữa chừng theo yêu cầu user).
+- Gói bàn giao: `~/Desktop/KaraokeLab_Handoff_2026-09-28/` (đọc `00_DOC_TRUOC_README.md`; tiếp tục theo `viet_lyrics_lab/HANDOFF.md`).
+
 ### 2026-09-28 (tối) — LỜI MẪU ĐÃ DUYỆT 185/185 + CHẤM LẠI (lab, app KHÔNG đổi)
 - Lỗi thật sau khi làm sạch lời mẫu: DEV A 6,90 % / E 7,09 %; TEST A 6,64 % / E 6,15 %. E không còn hơn A trên DEV → mốc nghiên cứu = A.
 - Bản chụp sạch: `~/viet_lyrics_lab/snapshots/qwen_whisper_selector_E_cleaned/`. Bộ thử mới 2026: chưa có bài (chờ user).
