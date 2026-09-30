@@ -1,6 +1,13 @@
 # PROGRESS
 
 ## CURRENT MILESTONE
+### 2026-09-29 (đêm) — THIẾT KẾ LẠI GIAO DIỆN: PHA 1–2 (khảo sát + hệ thiết kế), CHƯA SỬA CODE
+- `docs/UI_AUDIT.md`: điểm mạnh giữ lại, điểm yếu có dẫn chứng file/dòng (15 nút xanh đặc, 18 cỡ chữ, 19 mức padding, preview
+  không ưu tiên, thẻ bọc thẻ, ~10 màu trên timeline, emoji trong UI, inspector không theo ngữ cảnh), rủi ro hiệu năng phải giữ.
+- `docs/DESIGN_SYSTEM.md`: nguồn chuẩn (màu, chữ, khoảng cách, chiều cao control, bo góc, nút 3 cấp, panel, toolbar, preview,
+  inspector theo ngữ cảnh, timeline, luồng lời, xuất, trạng thái). Giữ #2395c5, vạch đỏ, 2 chặng tiến trình, nút quan trọng ở ngoài.
+- Chờ chủ dự án duyệt để làm chặng 1 (khung app + token + toolbar). Mỗi chặng: build, đo CPU Intel, bản thử riêng.
+
 ### 2026-09-29 (tối) — TÁCH ContentView.swift (~4700 dòng) THÀNH 14 FILE THEO KHU UI (audit, KHÔNG đổi logic)
 Theo yêu cầu tiếp tục audit — `ContentView.swift` là "God struct" duy nhất chứa gần như toàn bộ
 UI + handler nghiệp vụ của editor, > 4700 dòng, đã được audit trước (kiến trúc sư cũ) ghi nhận là
