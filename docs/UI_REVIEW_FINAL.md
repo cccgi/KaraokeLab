@@ -1,8 +1,8 @@
 # UI_REVIEW_FINAL — sau 9 chặng thiết kế lại (2026-09-29)
 
 Đối chiếu với `docs/DESIGN_SYSTEM.md` và danh sách kiểm của nhiệm vụ. Skill "UI UX Pro Max" không có trong kho (không tải từ nguồn
-lạ); bộ "Design" của Anthropic đã được gợi ý nhưng chưa cài → đánh giá này do Claude tự làm theo quy chuẩn. **Chưa có ảnh chụp màn hình**
-(phiên này không có quyền chụp màn hình) — chủ dự án duyệt trên bản thử `KaraokeMaker THIẾT KẾ MỚI.app` (`Scripts/pack-test.sh`).
+lạ); bộ "Design" của Anthropic đã được gợi ý nhưng chưa cài → đánh giá này do Claude tự làm theo quy chuẩn. Ảnh chụp + số đo thật: §8
+(`Scripts/ui-check.sh`). Chủ dự án duyệt trên bản thử `KaraokeMaker THIẾT KẾ MỚI.app` (`Scripts/pack-test.sh`).
 
 ## 1. Nhất quán — đo trước / sau (`Views/*.swift`)
 | Chỉ số | Trước | Sau |
@@ -46,11 +46,34 @@ cùng mục đích — nên gộp 1 `KMSliderRow` ở lần sau).
 - `ElapsedLabel` 1 Hz, chỉ tồn tại khi 1 chặng đang chạy. Hover nút là state cục bộ từng nút.
 - Đo: bản thử chặng 1–3 đứng yên 20 s = **0.0% CPU**. Bản cuối CHƯA đo trong editor có dự án mở (cần chủ dự án mở app) — đo lại khi duyệt.
 
-## 7. Còn tồn (không làm trong đợt này — có lý do)
-1. **Inspector cho Nhạc / Dự án**: mô hình chọn chỉ có `none / lyricLine / overlay`; bấm làn nhạc hiện = tua vạch đỏ (thói quen chủ dự án) →
-   cần quyết định UX trước khi thêm "chọn làn nhạc".
-2. Tab "Tạo Karaoke" biến mất sau khi canh xong (quyết định sản phẩm cũ) → vị trí tab xê dịch; giữ nguyên, chờ chủ dự án.
-3. Khung hình xuất vẫn là menu danh sách preset (chưa segmented 16:9 · 9:16 · 1:1 · 12:16) — cần xem danh sách `VideoResolution.presets`.
-4. `AppColorPicker`, bố cục trong `StylePanel` / Sóng nhạc, 4 biến thể hàng trượt → gộp ở đợt sau.
-5. Slider hệ thống (chưa tô phần đã kéo bằng màu nhấn như §13).
-6. Chưa có ảnh chụp màn hình; hiệu năng bản cuối cần đo khi mở dự án thật.
+## 7. Còn tồn — trạng thái sau phản hồi của chủ dự án (2026-09-29, khuya)
+1. **Inspector cho Nhạc / Dự án** — CHỜ chủ dự án chọn cách bấm (bấm làn nhạc hiện = tua vạch đỏ; đề xuất: nút "Nhạc" ở đầu làn để
+   chọn, giữ bấm-để-tua; "Dự án" = tab ở đầu inspector khi không chọn gì).
+2. **ĐÃ SỬA** — Tab "Tạo Karaoke" LUÔN hiện. Tạo xong → nút "Tạo nhanh / Tạo chất lượng / Không cần lời" KHOÁ (kèm dòng giải thích 🔒)
+   cho tới khi người dùng DÁN LẠI / SỬA lời ở ô tạo karaoke hoặc ĐỔI file nhạc (`canCreateKaraoke`, `karaokeInputChanged`).
+3. **ĐÃ SỬA** — Khung hình xuất = segmented **16:9 · 9:16 · 1:1 · 12:16** + menu độ phân giải theo tỉ lệ (`VideoResolution.Aspect`;
+   12:16 mới: 810×1080, 1080×1440). Kích thước lạ (dự án cũ) hiện "Tuỳ chỉnh W × H", không bị đổi.
+4. **ĐÃ SỬA** — 5 biến thể hàng trượt gộp vào 1 `KMSliderRow` / `KMSlider` (`Views/KMSlider.swift`); nút "Cột mảnh cổ điển" thành nút
+   BẬT/TẮT (bấm lần 2 trả về kiểu trước — nhớ trong phiên; không nhớ được thì về kiểu mặc định). `AppColorPicker` giữ bố cục riêng.
+5. **ĐÃ SỬA** — Slider theo §13: rãnh 3pt, phần đã kéo màu nhấn (khoảng −…+ tô từ 0), núm 12, nắm trúng núm không nhảy, bấm đúp = mặc
+   định, ghi ra ngoài ≤ 20 lần/giây + 1 lần lúc thả. Cả thanh tua ở thanh phát.
+6. **ĐÃ LÀM** — `Scripts/ui-check.sh`: bản dựng kiểm thử riêng tự mở dự án (bản chép), chụp 3 cỡ cửa sổ + lúc phát + bảng Xuất, đo CPU
+   Home / editor đứng yên / đang phát. Kết quả ở `.ui-check/<giờ>/` (gitignore — ảnh có lời bài hát). Số đo: xem §8.
+
+## 8. Ảnh chụp + đo thật (`Scripts/ui-check.sh`, iMac 2017 Intel, dự án 32 dòng, 2026-09-29 23:34)
+| Đo (CPU 1 nhân) | Kết quả |
+|---|---|
+| Home đứng yên | 0.8 % |
+| Editor đứng yên | 0.5 % |
+| Editor đang phát | 4.2 % |
+| Dừng phát (sau 5 s) | 0.2 % |
+| Bộ nhớ | ~260 MB |
+
+Ảnh chụp tìm ra và đã sửa (không thấy được khi chỉ đọc code):
+- **Cột phải (Kiểu chữ) bị TRÀN** ở mọi cỡ cửa sổ — mất mép trái/phải ("E TEXT", "nt size"). Do hàng B/I/U + "HOA/thường" cố định 210pt
+  trong cột 300pt (lỗi của chặng 1 khi hạ cột từ 360). Sửa: hàng tự xuống 2 dòng khi hẹp (`ViewThatFits`) + cột min 320.
+- **Cỡ cửa sổ tối thiểu vẫn 1360 × 780**: `AppDelegate.fitMainWindow` ghi đè khung SwiftUI → nay 1180 × 720 thật.
+- Nhãn rail tiếng Anh bị cắt ("Create K…", "Video Ba…", "Audio Wa…") → nhãn ngắn 1 từ (Karaoke · Backdrop · Lyrics · Text ·
+  Visualizer · Media); tiếng Việt giữ nguyên; tên đầy đủ ở tooltip + VoiceOver.
+- Home: số thời lượng đè lên chữ ảnh bìa → chuyển lên góc trên.
+- Sóng nhạc: "High" → "Height". Bảng Xuất thừa ~1/3 khoảng trống → cao 560.

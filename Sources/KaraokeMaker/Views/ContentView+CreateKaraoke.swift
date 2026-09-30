@@ -106,6 +106,17 @@ extension ContentView {
 
     enum LeftPanelTab: Hashable { case steps, background, lyrics, text, visualizer, files }
 
+    /// Nhãn NGẮN trên rail (6 ô ~50pt). Tiếng Việt giữ nguyên; tiếng Anh (và các thứ tiếng đang mượn tiếng Anh) dùng 1 từ
+    /// kiểu CapCut — "Video Background" / "Audio Waveform" bị cắt thành "Video Ba…" (thấy qua Scripts/ui-check.sh).
+    /// Tên đầy đủ vẫn ở tooltip + VoiceOver.
+    static let railShortNames: [String: String] = [
+        "Tạo Karaoke": "Karaoke", "Nền video": "Backdrop", "Sửa lời": "Lyrics",
+        "Thêm text": "Text", "Sóng nhạc": "Visualizer", "Media": "Media",
+    ]
+    func railLabel(_ vi: String) -> String {
+        LocEngine.launchLang == .vi ? vi : (Self.railShortNames[vi] ?? L(vi))
+    }
+
     /// Nút tab cột trái — kiểu "rail" CapCut: icon trên, nhãn dưới, ô chọn có nền + gạch nhấn.
     /// `done` (chỉ "Tạo Karaoke") → chấm xanh lá báo bước đã xong.
     @ViewBuilder
@@ -124,8 +135,8 @@ extension ContentView {
                             .offset(x: 7, y: -4)
                     }
                 }
-                Text(L(title)).font(.system(size: 11, weight: selected ? .semibold : .regular))
-                    .lineLimit(1).minimumScaleFactor(0.85)
+                Text(railLabel(title)).font(.system(size: 11, weight: selected ? .semibold : .regular))
+                    .lineLimit(1).minimumScaleFactor(0.75)
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, Theme.Space.s)
@@ -145,9 +156,8 @@ extension ContentView {
             // (U6) Kho media giờ là 1 KHU RIÊNG, chiếm hết chiều cao khi mở — không còn
             // nhét vừa trong 1 thẻ nhỏ của bước 3 (đúng góp ý: cần giống hẳn 1 "kho" thật,
             // không phải 1 mục cài đặt).
-            HStack(spacing: 4) {
-                // "Tạo Karaoke" chỉ còn khi CHƯA có dòng canh xong (hoặc đang đứng ở đó lúc vừa xong, tới
-                // khi tự chuyển sang "Nền video") — xong bước này là hết quay lại; mở lại project cũng vậy.
+            HStack(spacing: 2) {
+                // "Tạo Karaoke" LUÔN hiện (chủ dự án 2026-09-29); nút tạo trong đó tự khoá sau khi đã tạo (`canCreateKaraoke`).
                 if showStepsTab {
                     leftTabButton("Tạo Karaoke", icon: "sparkles", tab: .steps, done: aiLinesTimed)
                 }
@@ -159,7 +169,7 @@ extension ContentView {
                 leftTabButton("Sóng nhạc", icon: "waveform", tab: .visualizer, done: false)
                 leftTabButton("Media", icon: "folder", tab: .files, done: false)
             }
-            .padding(.horizontal, Theme.Space.m).padding(.vertical, Theme.Space.s)
+            .padding(.horizontal, Theme.Space.s).padding(.vertical, Theme.Space.s)
 
             Divider().overlay(Theme.stroke)
 
@@ -477,6 +487,7 @@ extension ContentView {
             store.perform(L("Bỏ nhạc")) { store.project.audio = nil }
         }
         karaokeOn = false
+        karaokeInputChanged = true           // đổi nhạc → được tạo lại
     }
 
     @ViewBuilder
@@ -535,6 +546,7 @@ extension ContentView {
                 }
             }
             playback.load(url: mix)
+            karaokeInputChanged = true
         }
     }
 
@@ -617,8 +629,17 @@ extension ContentView {
             KMChoiceCard(icon: "text.alignleft", title: L("Tôi có lời bài hát"),
                          subtitle: L("Dán hoặc nhập lời — máy tự canh giờ.")) { createMode = .hasLyrics }
             KMChoiceCard(icon: "wand.and.stars", title: L("Không cần lời — Tự động tạo Karaoke"),
-                         subtitle: L("Máy tự nghe, viết lời rồi canh giờ.")) { createMode = .noLyrics; startAutoKaraoke() }
+                         subtitle: L("Máy tự nghe, viết lời rồi canh giờ."),
+                         enabled: canCreateKaraoke) { createMode = .noLyrics; startAutoKaraoke() }
+            if !canCreateKaraoke { karaokeLockedNote }
         }
+    }
+
+    /// Karaoke đã tạo → nhắc cách mở lại 2 nút tạo.
+    var karaokeLockedNote: some View {
+        Label(L("Karaoke đã được tạo. Dán lại lời, sửa lời hoặc đổi file nhạc để tạo lại."), systemImage: "lock")
+            .font(Theme.Typo.helper).foregroundStyle(Theme.inkFaint)
+            .fixedSize(horizontal: false, vertical: true)
     }
 
     @ViewBuilder
@@ -633,6 +654,8 @@ extension ContentView {
             .padding(Theme.Space.xs)
             .background(RoundedRectangle(cornerRadius: Theme.Radius.sm).fill(Theme.elevated.opacity(0.5)))
             .overlay(RoundedRectangle(cornerRadius: Theme.Radius.sm).stroke(Theme.strokeStrong))
+            // Dán / gõ / sửa lời ở đây = "đầu vào mới" → mở lại 2 nút tạo.
+            .onChange(of: alignLyricsInput) { _ in karaokeInputChanged = true }
 
         HStack(spacing: Theme.Space.s) {
             Button(L("Dán")) {
@@ -652,7 +675,7 @@ extension ContentView {
                 Label(advancedProxy.isBusy ? L("Đang xử lý…") : L("Tạo nhanh Karaoke"), systemImage: "bolt.fill")
             }
             .buttonStyle(.kmPrimary)
-            .disabled(advancedProxy.isBusy || noLyrics)
+            .disabled(advancedProxy.isBusy || noLyrics || !canCreateKaraoke)
 
             Button {
                 runForcedAlign(quality: .hq)
@@ -660,8 +683,9 @@ extension ContentView {
                 Label(L("Tạo Karaoke Chất Lượng"), systemImage: "sparkles")
             }
             .buttonStyle(.kmSecondary)
-            .disabled(advancedProxy.isBusy || noLyrics)
+            .disabled(advancedProxy.isBusy || noLyrics || !canCreateKaraoke)
         }
+        if !canCreateKaraoke { karaokeLockedNote }
         Text(L("“Chất lượng” tách nhạc sạch hơn nhưng lâu hơn nhiều."))
             .font(Theme.Typo.helper).foregroundStyle(Theme.inkFaint)
 
@@ -752,6 +776,7 @@ extension ContentView {
         currentLineIndex = 0
         alignPhase = .done
         aiLinesListExpanded = true
+        karaokeInputChanged = false          // vừa tạo xong → khoá 2 nút tạo cho tới khi đầu vào đổi
         return .success(lines: outcome.lines.count)
     }
 

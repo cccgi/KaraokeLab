@@ -137,7 +137,10 @@ extension ContentView {
 
     /// Tab "Sửa lời" — có dòng canh xong rồi thì KHÔNG quay lại "Tạo Karaoke" nữa
     /// (trừ lúc đang đứng ở đó: vừa tạo xong, chờ tự chuyển sang "Nền video").
-    var showStepsTab: Bool { !aiLinesTimed || leftPanelTab == .steps }
+    /// Tab "Tạo Karaoke" LUÔN hiện (chủ dự án 2026-09-29) — không còn biến mất sau khi canh xong.
+    var showStepsTab: Bool { true }
+    /// Được bấm tạo karaoke (nhanh / chất lượng / không cần lời)?
+    var canCreateKaraoke: Bool { !aiLinesTimed || karaokeInputChanged }
 
     /// Bấm vào 1 dòng ở tab "Sửa lời": chọn dòng + đưa vạch đỏ tới đầu dòng (KHÔNG tự phát nhạc).
     func focusLyricLine(_ index: Int) {

@@ -32,6 +32,7 @@ extension ContentView {
         playback.load(url: url)
         beatSep.refresh(for: url)
         SpectrumStore.ensure(for: url)          // sẵn phổ cho "sóng nhạc"
+        karaokeInputChanged = true              // đổi file nhạc → được tạo lại karaoke
     }
 
     /// Nhận file nhạc thả từ Finder vào (dùng ở bước ①).

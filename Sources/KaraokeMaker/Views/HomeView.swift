@@ -152,18 +152,19 @@ private struct ProjectCard: View {
                     Image(systemName: "music.mic").font(.system(size: 24)).foregroundColor(Theme.inkFaint)
                 }
                 if let d = entry.duration {
+                    // Góc TRÊN-phải: ảnh bìa karaoke có chữ ở đáy → để dưới thì số đè lên lời (thấy qua Scripts/ui-check.sh).
                     VStack {
-                        Spacer()
                         HStack {
                             Spacer()
                             Text(formatDuration(d))
                                 .font(.system(size: 10, weight: .medium, design: .monospaced))
                                 .foregroundColor(.white)
                                 .padding(.horizontal, 5).padding(.vertical, 2)
-                                .background(Color.black.opacity(0.55))
+                                .background(Color.black.opacity(0.7))
                                 .cornerRadius(4)
                                 .padding(6)
                         }
+                        Spacer()
                     }
                 }
             }

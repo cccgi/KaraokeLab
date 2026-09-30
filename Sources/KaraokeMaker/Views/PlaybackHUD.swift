@@ -59,12 +59,10 @@ struct TransportBar: View {
             .font(Theme.Typo.mono)
             .layoutPriority(1)
 
-            Slider(
-                value: Binding(get: { clock.seconds }, set: { onSeek($0) }),
-                in: 0...max(timelineTotal, 0.01)
-            )
-            .controlSize(.small)
-            .disabled(!canTransport)
+            KMSlider(value: clock.seconds, range: 0...max(timelineTotal, 0.01),
+                     accessibilityLabel: L("Vị trí phát"),
+                     accessibilityText: TimeFormatting.clock(clock.seconds)) { onSeek($0) }
+                .disabled(!canTransport)
         }
         .padding(.horizontal, Theme.Space.xs)
         .frame(height: 40)

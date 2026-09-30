@@ -79,10 +79,10 @@ extension ContentView {
                     Label(L("Không mở được file (đã di chuyển / đổi tên?)."), systemImage: "exclamationmark.triangle.fill")
                         .font(Theme.Typo.helper).foregroundStyle(Theme.warning)
                 }
-                bgSlider("Phóng to", media.scale, 0.2...4) { v in editBackgroundMedia("Phóng nền") { $0.scale = v } }
-                bgSlider("Lệch ngang", media.offsetX, -0.5...0.5) { v in editBackgroundMedia("Lệch nền ngang") { $0.offsetX = v } }
-                bgSlider("Lệch dọc", media.offsetY, -0.5...0.5) { v in editBackgroundMedia("Lệch nền dọc") { $0.offsetY = v } }
-                bgSlider("Độ mờ", media.opacity, 0...1) { v in editBackgroundMedia("Độ mờ nền") { $0.opacity = v } }
+                bgSlider("Phóng to", media.scale, 0.2...4, reset: 1) { v in editBackgroundMedia("Phóng nền") { $0.scale = v } }
+                bgSlider("Lệch ngang", media.offsetX, -0.5...0.5, reset: 0) { v in editBackgroundMedia("Lệch nền ngang") { $0.offsetX = v } }
+                bgSlider("Lệch dọc", media.offsetY, -0.5...0.5, reset: 0) { v in editBackgroundMedia("Lệch nền dọc") { $0.offsetY = v } }
+                bgSlider("Độ mờ", media.opacity, 0...1, reset: 1) { v in editBackgroundMedia("Độ mờ nền") { $0.opacity = v } }
 
                 Divider().padding(.vertical, 2)
                 Toggle(L("Tự chuyển động nhẹ (Ken Burns)"), isOn: Binding(
@@ -116,13 +116,10 @@ extension ContentView {
         }
     }
 
-    func bgSlider(_ title: String, _ value: Double, _ range: ClosedRange<Double>, _ onChange: @escaping (Double) -> Void) -> some View {
-        HStack(spacing: 8) {
-            Text(L(title)).font(Theme.Typo.label).foregroundStyle(Theme.inkDim).frame(width: 78, alignment: .leading)
-            Slider(value: Binding(get: { value }, set: { onChange($0) }), in: range)
-            Text(String(format: "%.2f", value)).font(Theme.Typo.mono)
-                .foregroundStyle(Theme.inkDim).frame(width: 34, alignment: .trailing)
-        }
+    func bgSlider(_ title: String, _ value: Double, _ range: ClosedRange<Double>, reset: Double? = nil,
+                  _ onChange: @escaping (Double) -> Void) -> some View {
+        KMSliderRow(label: L(title), value: value, range: range, defaultValue: reset,
+                    format: { String(format: "%.2f", $0) }, onChange: onChange)
     }
 
     func pickBackground(_ kind: BackgroundMedia.Kind) {
@@ -254,24 +251,43 @@ extension ContentView {
         VStack(alignment: .leading, spacing: Theme.Space.m) {
             Text(L("Xuất video")).sectionHeaderStyle()
 
-            // Khung hình + FPS
-            HStack(spacing: Theme.Space.l) {
-                Picker(L("Khung hình"), selection: Binding<String>(
-                    get: {
-                        let r = store.project.resolution
-                        return VideoResolution.presets.first { $0.value.width == r.width && $0.value.height == r.height }?.name ?? "Tuỳ chỉnh"
-                    },
-                    set: { name in
-                        if let preset = VideoResolution.presets.first(where: { $0.name == name }) {
-                            store.perform(L("Đổi khung hình")) {
-                                store.project.resolution.width = preset.value.width
-                                store.project.resolution.height = preset.value.height
-                            }
+            // Khung hình: 4 tỉ lệ (segmented) → độ phân giải của tỉ lệ đó → FPS.
+            let res = store.project.resolution
+            let aspect = res.aspect
+            VStack(alignment: .leading, spacing: Theme.Space.xs) {
+                Text(L("Khung hình")).font(Theme.Typo.label).foregroundStyle(Theme.inkDim)
+                Picker("", selection: Binding<VideoResolution.Aspect?>(
+                    get: { aspect },
+                    set: { a in
+                        guard let a, a != aspect else { return }
+                        let s = a.sizes[a.defaultIndex]
+                        store.perform(L("Đổi khung hình")) {
+                            store.project.resolution.width = s.width
+                            store.project.resolution.height = s.height
                         }
                     }
                 )) {
-                    ForEach(VideoResolution.presets, id: \.name) { Text($0.name).tag($0.name) }
-                    Text(L("Tuỳ chỉnh")).tag("Tuỳ chỉnh")
+                    ForEach(VideoResolution.Aspect.allCases) { Text($0.rawValue).tag(Optional($0)) }
+                }
+                .pickerStyle(.segmented).labelsHidden()
+            }
+            HStack(spacing: Theme.Space.l) {
+                if let aspect {
+                    Picker(L("Độ phân giải"), selection: Binding<Int>(
+                        get: { aspect.sizes.firstIndex { $0.width == res.width && $0.height == res.height } ?? aspect.defaultIndex },
+                        set: { i in
+                            let s = aspect.sizes[i]
+                            store.perform(L("Đổi khung hình")) {
+                                store.project.resolution.width = s.width
+                                store.project.resolution.height = s.height
+                            }
+                        }
+                    )) {
+                        ForEach(aspect.sizes.indices, id: \.self) { Text(aspect.sizes[$0].name).tag($0) }
+                    }
+                } else {
+                    Text(String(format: L("Tuỳ chỉnh %d × %d"), res.width, res.height))
+                        .font(Theme.Typo.label).foregroundStyle(Theme.inkDim)
                 }
 
                 Picker("FPS", selection: Binding<Int>(

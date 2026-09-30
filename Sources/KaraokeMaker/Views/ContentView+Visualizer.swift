@@ -31,6 +31,38 @@ extension ContentView {
         }
     }
 
+    /// Đang ở kiểu "Cột mảnh cổ điển"? (so các thông số KIỂU; vị trí / cỡ người dùng kéo sau vẫn tính là cổ điển)
+    func isClassicVisualizer(_ v: MusicVisualizer?) -> Bool {
+        guard let v else { return false }
+        let white = RGBAColor(r: 1, g: 1, b: 1, a: 1)
+        return v.style == .barsUp && v.bandCount == 140 && v.color1 == white && v.color2 == white
+            && abs(v.barGapFrac - 0.22) < 0.001 && abs(v.cornerRadiusFrac - 0.1) < 0.001 && abs(v.glow - 0.08) < 0.001
+    }
+
+    /// Nút bật / tắt "Cột mảnh cổ điển" (chủ dự án 2026-09-29): bấm lần 1 → cổ điển; bấm lần 2 → về kiểu trước đó
+    /// (không nhớ được kiểu trước, vd. mở lại dự án → về kiểu mặc định).
+    func toggleClassicVisualizer() {
+        let cur = store.project.visualizer
+        guard cur != nil else { return }
+        if isClassicVisualizer(cur) {
+            let back = classicVizBackup.flatMap { isClassicVisualizer($0) ? nil : $0 } ?? MusicVisualizer()
+            classicVizBackup = nil
+            store.perform(L("Đổi kiểu sóng nhạc")) {
+                guard var v = store.project.visualizer else { return }
+                v.style = back.style; v.bandCount = back.bandCount
+                v.barGapFrac = back.barGapFrac; v.cornerRadiusFrac = back.cornerRadiusFrac
+                v.heightFrac = back.heightFrac; v.baselineY = back.baselineY; v.mirror = back.mirror
+                v.color1 = back.color1; v.color2 = back.color2; v.gradientDir = back.gradientDir
+                v.glowAuto = back.glowAuto; v.glow = back.glow; v.tipColor = back.tipColor
+                v.opacity = back.opacity; v.sensitivity = back.sensitivity; v.smoothing = back.smoothing
+                store.project.visualizer = v
+            }
+        } else {
+            classicVizBackup = cur
+            applyClassicVisualizerPreset()
+        }
+    }
+
     /// Preset nhanh: cột trắng mảnh, dày, gọn — kiểu spectrum cổ điển hay thấy trong video nhạc
     /// (khác hẳn kiểu gradient neon dày cộp mặc định). Giữ nguyên vị trí / kích thước đang đặt.
     func applyClassicVisualizerPreset() {
@@ -113,16 +145,18 @@ extension ContentView {
             Picker(L("Kiểu"), selection: v.style) {
                 ForEach(MusicVisualizer.Style.allCases) { Text($0.label).tag($0) }
             }.controlSize(.small)
-            Button { applyClassicVisualizerPreset() } label: {
-                Label(L("Cột mảnh cổ điển"), systemImage: "wand.and.stars")
+            let classicOn = isClassicVisualizer(store.project.visualizer)
+            Button { toggleClassicVisualizer() } label: {
+                Label(L("Cột mảnh cổ điển"), systemImage: classicOn ? "checkmark" : "wand.and.stars")
             }
-            .controlSize(.small)
-            .help(L("Đổi sang kiểu cột trắng mảnh, dày, gọn gàng — kiểu spectrum cổ điển hay dùng trong video nhạc."))
-            overlaySlider("Cỡ ngang", vizKFBinding(\.widthFrac, base: v.widthFrac), 0.2...1.0, "%.2f")
-            overlaySlider("Cao", vizKFBinding(\.heightFrac, base: v.heightFrac), 0.04...0.6, "%.2f")
-            overlaySlider("Dời ngang", vizKFBinding(\.offsetX, base: v.offsetX), -0.5...0.5, "%.2f")
-            overlaySlider("Nâng lên", vizKFBinding(\.baselineY, base: v.baselineY), 0...0.9, "%.2f")
-            overlaySlider("Độ mờ", vizKFBinding(\.opacity, base: v.opacity), 0...1, "%.2f")
+            .buttonStyle(.kmToggle(classicOn))
+            .help(classicOn ? L("Đang dùng kiểu cột mảnh cổ điển — bấm lần nữa để trở về kiểu trước.")
+                            : L("Đổi sang kiểu cột trắng mảnh, dày, gọn gàng — kiểu spectrum cổ điển hay dùng trong video nhạc."))
+            overlaySlider("Cỡ ngang", vizKFBinding(\.widthFrac, base: v.widthFrac), 0.2...1.0, "%.2f", reset: MusicVisualizer().widthFrac)
+            overlaySlider("Chiều cao", vizKFBinding(\.heightFrac, base: v.heightFrac), 0.04...0.6, "%.2f", reset: MusicVisualizer().heightFrac)
+            overlaySlider("Dời ngang", vizKFBinding(\.offsetX, base: v.offsetX), -0.5...0.5, "%.2f", reset: 0)
+            overlaySlider("Nâng lên", vizKFBinding(\.baselineY, base: v.baselineY), 0...0.9, "%.2f", reset: MusicVisualizer().baselineY)
+            overlaySlider("Độ mờ", vizKFBinding(\.opacity, base: v.opacity), 0...1, "%.2f", reset: 1)
 
             HStack(spacing: 8) {
                 Text(L("Chuyển động")).font(.caption.bold())
@@ -162,9 +196,9 @@ extension ContentView {
                  ? L("Bấm ◇ để bắt đầu. Rồi dời vạch đỏ + chỉnh cỡ/vị trí/độ mờ (hoặc kéo sóng trên màn hình xem trước) → tự tạo mốc.")
                  : L("Dời vạch đỏ tới lúc khác, chỉnh cỡ/vị trí/độ mờ → tự ghi mốc."))
                 .font(Theme.Typo.helper).foregroundStyle(Theme.inkFaint).fixedSize(horizontal: false, vertical: true)
-            overlaySlider("Sáng (glow)", v.glow, 0...1, "%.2f")
-            overlaySlider("Độ nhạy", v.sensitivity, 0.3...3, "%.2f")
-            overlaySlider("Độ mượt", v.smoothing, 0...1, "%.2f")
+            overlaySlider("Sáng (glow)", v.glow, 0...1, "%.2f", reset: MusicVisualizer().glow)
+            overlaySlider("Độ nhạy", v.sensitivity, 0.3...3, "%.2f", reset: 1)
+            overlaySlider("Độ mượt", v.smoothing, 0...1, "%.2f", reset: MusicVisualizer().smoothing)
             DisclosureGroup(L("Màu sắc")) {
                 VStack(alignment: .leading, spacing: 5) {
                     Picker(L("Kiểu màu"), selection: v.gradientDir) {
@@ -200,15 +234,15 @@ extension ContentView {
                 VStack(alignment: .leading, spacing: 5) {
                     overlaySlider("Số cột", Binding(get: { Double(v.wrappedValue.bandCount) },
                                                     set: { v.wrappedValue.bandCount = Int($0) }), 12...200, "%.0f")
-                    overlaySlider("Khe cột", v.barGapFrac, 0...0.85, "%.2f")
-                    overlaySlider("Bo góc", v.cornerRadiusFrac, 0...0.5, "%.2f")
+                    overlaySlider("Khe cột", v.barGapFrac, 0...0.85, "%.2f", reset: MusicVisualizer().barGapFrac)
+                    overlaySlider("Bo góc", v.cornerRadiusFrac, 0...0.5, "%.2f", reset: MusicVisualizer().cornerRadiusFrac)
                     if v.wrappedValue.style == .segments {
                         overlaySlider("Số đốt", Binding(get: { Double(v.wrappedValue.segCount) },
                                                         set: { v.wrappedValue.segCount = Int($0) }), 4...36, "%.0f")
                     }
                     if v.wrappedValue.style == .radial || v.wrappedValue.style == .radialBlob
                         || v.wrappedValue.style == .radialRing {
-                        overlaySlider("Xoay", v.rotation, -180...180, "%.0f")
+                        overlaySlider("Xoay", v.rotation, -180...180, "%.0f", reset: 0)
                     }
                     if v.wrappedValue.style == .waveLine || v.wrappedValue.style == .radialRing {
                         overlaySlider("Nét", v.lineWidthFrac, 0.002...0.03, "%.3f")

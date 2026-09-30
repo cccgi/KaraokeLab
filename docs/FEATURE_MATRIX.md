@@ -84,3 +84,8 @@ Status: NOT_STARTED · PARTIAL · FUNCTIONAL · VERIFIED · BROKEN · NEEDS_REFA
 | UI-3 | Tab "Sửa lời" đi theo vạch đỏ (dòng đang hát sáng + nằm giữa) | FUNCTIONAL | `LyricFollowTicker` cục bộ trong `LyricEditPanel` (không dựng lại `ContentView`). |
 | UI-4 | Từ chưa chắc gạch chân trên timeline | FUNCTIONAL | `TimelineCanvasView.setUncertainWordKeys` — chỉ khi số ô chữ khớp số từ trong câu. |
 | UI-5 | Ảnh thu nhỏ có cache (kho Media + Home) | FUNCTIONAL | `MediaThumbCache` (ImageIO) — trước giải mã nguyên ảnh mỗi lần vẽ lại. |
+| UI-6 | Tab "Tạo Karaoke" luôn hiện + khoá nút tạo sau khi đã tạo | FUNCTIONAL | Mở lại khi dán / sửa lời ở ô tạo karaoke hoặc đổi file nhạc (`canCreateKaraoke`). Chỉ trạng thái trong phiên. |
+| UI-7 | Khung hình xuất 16:9 · 9:16 · 1:1 · 12:16 | FUNCTIONAL | `VideoResolution.Aspect` + menu độ phân giải theo tỉ lệ. |
+| UI-8 | Thanh trượt chung `KMSlider` / `KMSliderRow` | FUNCTIONAL | Tô màu nhấn, bấm đúp = mặc định, tiết lưu 20 Hz. Thay 5 biến thể cũ + thanh tua. |
+| UI-9 | "Cột mảnh cổ điển" bật / tắt | FUNCTIONAL | Bấm lần 2 trả về kiểu trước (`classicVizBackup`, trong phiên). |
+| UI-10 | Kiểm tra giao diện tự động | FUNCTIONAL | `Scripts/ui-check.sh` — ảnh 3 cỡ cửa sổ + đo CPU; kết quả `.ui-check/` (không lên git). |

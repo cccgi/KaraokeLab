@@ -212,81 +212,23 @@ extension ContentView {
         }
     }
 
-    /// Slider màu: nội bộ −1…1 (hoặc 0…1), hiện −100…100. Double-click số = về 0.
+    /// Slider màu: nội bộ −1…1 (hoặc 0…1), hiện −100…100. Bấm đúp = về 0. (vẽ bằng `KMSliderRow` chung)
     func colorSlider(_ label: String, _ v: Binding<Double>, bipolar: Bool = true,
                              track: [Color]? = nil) -> some View {
-        let lo: Double = bipolar ? -1 : 0
-        return HStack(spacing: Theme.Space.s) {
-            Text(L(label)).font(Theme.Typo.label).foregroundStyle(Theme.inkDim).frame(width: 84, alignment: .leading)
-                .lineLimit(1).minimumScaleFactor(0.85)
-            if let track {
-                GradientTrackSlider(value: v, range: lo...1, trackColors: track)
-            } else {
-                Slider(value: v, in: lo...1)
-            }
-            Text("\(Int((v.wrappedValue * 100).rounded()))")
-                .font(Theme.Typo.mono)
-                .frame(width: 30, alignment: .trailing)
-                .foregroundStyle(v.wrappedValue == 0 ? Theme.inkFaint : Theme.ink)
-                .help(L("Bấm đúp để về 0"))
-                .onTapGesture(count: 2) { v.wrappedValue = 0 }
+        KMSliderRow(L(label), v, (bipolar ? -1 : 0)...1, defaultValue: 0, track: track, valueWidth: 30) {
+            "\(Int(($0 * 100).rounded()))"
         }
     }
 
-    /// Rãnh trượt tô sẵn gradient CỐ ĐỊNH (kiểu CapCut) — cho Nhiệt độ / Sắc / Bão hoà, để thấy
-    /// ngay kéo bên nào ra tông gì. Bấm/kéo bất kỳ đâu trên rãnh (không cần trúng núm).
-    struct GradientTrackSlider: View {
-        @Binding var value: Double
-        var range: ClosedRange<Double> = -1...1
-        var trackColors: [Color]
-
-        var body: some View {
-            GeometryReader { geo in
-                let w = max(1, geo.size.width - 14)
-                let span = range.upperBound - range.lowerBound
-                let frac = span > 0 ? CGFloat((value - range.lowerBound) / span) : 0
-                let x = 7 + max(0, min(1, frac)) * w
-                ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 2)
-                        .fill(LinearGradient(colors: trackColors, startPoint: .leading, endPoint: .trailing))
-                        .frame(height: 3)
-                        .padding(.horizontal, 7)
-                    Circle()
-                        .fill(Color.white)
-                        .frame(width: 12, height: 12)
-                        .shadow(color: .black.opacity(0.35), radius: 1.5, y: 0.5)
-                        .position(x: x, y: geo.size.height / 2)
-                }
-                .contentShape(Rectangle())
-                .gesture(DragGesture(minimumDistance: 0).onChanged { g in
-                    let f = max(0, min(1, Double((g.location.x - 7) / w)))
-                    value = range.lowerBound + f * span
-                })
-            }
-            .frame(height: 16)
-        }
-    }
-
+    /// Hàng trượt số (lớp chữ, sóng nhạc…). `reset` = giá trị khi bấm đúp (nil = không có mặc định).
     func overlaySlider(_ label: String, _ value: Binding<Double>,
-                               _ range: ClosedRange<Double>, _ fmt: String) -> some View {
-        HStack(spacing: Theme.Space.s) {
-            Text(L(label)).font(Theme.Typo.label).foregroundStyle(Theme.inkDim).frame(width: 52, alignment: .leading)
-                .lineLimit(1).minimumScaleFactor(0.8)
-            Slider(value: value, in: range).controlSize(.small)
-            Text(String(format: fmt, value.wrappedValue))
-                .font(Theme.Typo.mono).foregroundStyle(Theme.inkDim).frame(width: 40, alignment: .trailing)
-        }
+                               _ range: ClosedRange<Double>, _ fmt: String, reset: Double? = nil) -> some View {
+        KMSliderRow(L(label), value, range, defaultValue: reset) { String(format: fmt, $0) }
     }
 
-    /// Hàng "Hiện dần / Mờ dần" kiểu thanh trượt + số giây (thay `Stepper` cũ).
+    /// Hàng "Hiện dần / Mờ dần" — thanh trượt + số giây. Bấm đúp = 0.
     func fadeRow(_ label: String, _ value: Binding<Double>, max maxDur: Double) -> some View {
-        HStack(spacing: Theme.Space.s) {
-            Text(L(label)).font(Theme.Typo.label).foregroundStyle(Theme.inkDim).frame(width: 66, alignment: .leading)
-            Slider(value: value, in: 0...Swift.max(0.1, maxDur)).controlSize(.small)
-            Text(String(format: "%.1fs", value.wrappedValue))
-                .font(Theme.Typo.mono).foregroundStyle(Theme.inkDim)
-                .frame(width: 40, alignment: .trailing)
-        }
+        KMSliderRow(L(label), value, 0...Swift.max(0.1, maxDur), defaultValue: 0) { String(format: "%.1fs", $0) }
     }
 
     func overlayBinding(_ id: UUID) -> Binding<OverlayClip>? {

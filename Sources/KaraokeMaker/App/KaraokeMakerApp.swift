@@ -204,7 +204,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func fitMainWindow(_ window: NSWindow) {
-        window.minSize = NSSize(width: 1360, height: 780)
+        // Khớp khung SwiftUI của editor (thiết kế lại 2026-09-29: min 1180 × 720) — trước đây 1360 × 780 ghi đè mất.
+        window.minSize = NSSize(width: 1180, height: 720)
         // KHÔNG nhớ kích thước cũ — luôn mở bung hết cỡ.
         window.setFrameAutosaveName("")
         if let screen = window.screen ?? NSScreen.main {

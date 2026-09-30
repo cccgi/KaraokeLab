@@ -22,3 +22,6 @@ dist-release/
 /.build-release-x86_64/
 # Thử nghiệm whisper.cpp cũ (09/2026), Package.swift KHÔNG dùng — chỉ nằm trên iMac.
 /vendor/whisper.xcframework/
+# Bản dựng kiểm thử giao diện + ảnh chụp/đo của Scripts/ui-check.sh (ảnh có lời bài hát — không đưa lên git công khai).
+/.build-guitest/
+/.ui-check/

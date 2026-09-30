@@ -82,6 +82,9 @@ struct ContentView: View {
     @ObservedObject var kfClip = KeyframeClipboard.shared
     @StateObject var aligner = ForcedAligner()
     @State var alignLyricsInput = ""
+    /// Karaoke đã tạo → 2 nút "Tạo nhanh / Tạo chất lượng" (và "Không cần lời") KHOÁ cho tới khi người dùng DÁN LẠI lời,
+    /// SỬA lời ở ô tạo karaoke, hoặc ĐỔI file nhạc (luật chủ dự án 2026-09-29). Chưa có karaoke thì luôn mở.
+    @State var karaokeInputChanged = false
     // "Tự động tạo Karaoke — Không cần lời" (Auto Karaoke): đường THỨ HAI sau khi nhập nhạc. Chạy nền; bước cuối gọi CHÍNH hàm canh giờ
     // (`runKaraokeTiming`) mà đường "Có lời" gọi — không có bộ canh giờ mới.
     @StateObject var autoKaraoke = AutoKaraokeFlow()
@@ -109,6 +112,8 @@ struct ContentView: View {
     @State var exportAudioChoice: ExportAudioChoice = .original
     @State var exportProRes = false
     @State var exportAdvancedOpen = false
+    /// Kiểu sóng nhạc TRƯỚC khi bấm "Cột mảnh cổ điển" — bấm lần nữa trả về đúng kiểu này (chỉ bộ nhớ).
+    @State var classicVizBackup: MusicVisualizer?
     @AppStorage("kmShowSafeArea") var showSafeArea = false
 
     // Song ca / đánh dấu người hát
@@ -303,7 +308,7 @@ struct ContentView: View {
                         .layoutPriority(1)
                         .clipped()
                     inspectorColumn
-                        .frame(minWidth: 300, idealWidth: 340, maxWidth: 440)
+                        .frame(minWidth: 320, idealWidth: 340, maxWidth: 440)
                         .clipped()
                 }
                 .frame(minHeight: 280, maxHeight: .infinity)
@@ -349,7 +354,7 @@ struct ContentView: View {
             Divider().overlay(Theme.stroke)
             ScrollView { exportTabContent.padding(Theme.Space.xl) }
         }
-        .frame(width: 560, height: 640)
+        .frame(width: 560, height: 560)   // 640 → 560: mặc định (Nâng cao gập) để trống ~1/3 dưới (ảnh ui-check); mở Nâng cao thì cuộn
         .background(Theme.panel)
     }
 

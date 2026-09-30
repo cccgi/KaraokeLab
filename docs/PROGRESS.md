@@ -1,6 +1,16 @@
 # PROGRESS
 
 ## CURRENT MILESTONE
+### 2026-09-29 (khuya) — SỬA THEO PHẢN HỒI 6 ĐIỂM CỦA CHỦ DỰ ÁN (chưa commit — chờ chủ dự án test bản thử)
+- Tab "Tạo Karaoke" luôn hiện; tạo xong thì 3 nút tạo khoá cho tới khi dán / sửa lời hoặc đổi nhạc.
+- Khung hình xuất: 16:9 · 9:16 · 1:1 · 12:16 + độ phân giải theo tỉ lệ.
+- `KMSlider` / `KMSliderRow` thay mọi thanh trượt (màu, sóng nhạc, chữ, nền, fade, StylePanel, thanh tua, 2 thanh trong bảng màu).
+- "Cột mảnh cổ điển" bấm lần 2 = trở về kiểu trước.
+- `Scripts/ui-check.sh`: ảnh + đo CPU tự động (bản dựng `-DKM_GUITEST` riêng ở `.build-guitest`, kết quả `.ui-check/`).
+- Ảnh chụp thật tìm ra + đã sửa: cột Kiểu chữ bị tràn/cắt mép (lỗi chặng 1), cỡ cửa sổ tối thiểu thật vẫn 1360 (AppDelegate ghi đè),
+  nhãn rail tiếng Anh bị cắt, số thời lượng Home đè ảnh bìa, "High"→"Height", bảng Xuất thừa chỗ. Đo: đứng yên 0.5 %, phát 4.2 % CPU.
+- Còn chờ chủ dự án: cách chọn làn Nhạc cho inspector (mục 1).
+
 ### 2026-09-29 (đêm, sau) — THIẾT KẾ LẠI GIAO DIỆN: XONG 9 CHẶNG (chờ chủ dự án duyệt bản thử)
 - Chặng 1–9: token + nút 3 cấp (`Theme.swift`); toolbar chỉ "Xuất" là nút chính; khung ưu tiên preview (cửa sổ min 1180); cột trái phẳng
   (tab ✓, bước đánh số không hộp, bỏ emoji); preview phẳng (bỏ bóng/bo); inspector `PanelHeader` + token; timeline màu theo nghĩa, SF

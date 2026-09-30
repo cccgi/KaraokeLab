@@ -103,7 +103,8 @@ Mục = `InspectorSection` (tiêu đề `panelTitle`, gập được). Hàng = n
 
 ## 13. Field / control
 Cao 22 (inspector) / 26; bo 4; nền `elevated`; viền `stroke` → `strokeStrong` khi hover; focus vòng `accent`. Slider: rãnh 3px
-`strokeStrong`, phần đã kéo `accent` (bipolar: tô từ giữa), núm 12; bấm đúp = về mặc định. Nhấp ra ngoài = thoát sửa (giữ
+`strokeStrong`, phần đã kéo `accent` (bipolar: tô từ giữa), núm 12; bấm đúp = về mặc định — code: `KMSlider` / `KMSliderRow`
+(`Views/KMSlider.swift`), KHÔNG dùng `Slider` hệ thống ở chỗ mới. Nhấp ra ngoài = thoát sửa (giữ
 `OutsideClickDismiss`). TextField không tự focus.
 
 ## 14. Timeline (ưu tiên cao nhất — vẽ AppKit, token `Theme.NS`)

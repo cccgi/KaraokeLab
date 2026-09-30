@@ -298,6 +298,14 @@ enum GUITestDriver {
         case "togglekaraoke":
             NotificationCenter.default.post(name: Notification.Name("KMGUITest.toggleKaraoke"), object: nil); return ["ok": true]
 
+        case "toggleplay":
+            // Phát / dừng ĐÚNG như nút Play (không qua phím Space — phím có thể rơi vào ô đang giữ focus bàn phím).
+            NotificationCenter.default.post(name: Notification.Name("KMGUITest.togglePlay"), object: nil); return ["ok": true]
+
+        case "ui":
+            // Đổi trạng thái giao diện để chụp ảnh (tab trái: steps/background/lyrics/text/visualizer/files; export/closeexport).
+            NotificationCenter.default.post(name: Notification.Name("KMGUITest.ui"), object: c["what"] as? String ?? ""); return ["ok": true]
+
         case "lines":
             guard let tabs = AppDelegate.current?.tabs else { return ["ok": false, "error": "no tabs"] }
             let ls = tabs.active.store.project.lines

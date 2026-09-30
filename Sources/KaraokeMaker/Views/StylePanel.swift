@@ -254,22 +254,27 @@ struct StylePanel<AfterContent: View>: View {
 
             slider("Cỡ chữ", style.fontSize, 12...260, suffix: "px") { v in edit("Cỡ chữ", t) { $0.fontSize = v } }
 
-            HStack(spacing: 6) {
+            // B / I / U + HOA/thường: 1 hàng khi đủ chỗ, cột hẹp thì xuống 2 hàng (trước đây cố định 210pt →
+            // cột inspector 300pt bị TRÀN, cắt mất mép trái/phải của cả bảng — thấy qua Scripts/ui-check.sh).
+            let bius = HStack(spacing: 6) {
                 styleToggle("B", on: style.fontBold, font: .system(size: 13, weight: .heavy)) { v in perform("Đậm", t) { $0.fontBold = v } }
                 styleToggle("I", on: style.fontItalic, font: .system(size: 13).italic()) { v in perform("Nghiêng", t) { $0.fontItalic = v } }
                 styleToggle("U", on: style.fontUnderline, font: .system(size: 13), underline: true) { v in perform("Gạch chân", t) { $0.fontUnderline = v } }
-                Spacer()
-                Picker("", selection: Binding(
-                    get: { style.textCase },
-                    set: { v in perform("Kiểu hoa/thường", t) { $0.textCase = v } }
-                )) {
-                    Text(L("Giữ")).tag(TextCase.none)
-                    Text(L("HOA")).tag(TextCase.upper)
-                    Text(L("thường")).tag(TextCase.lower)
-                    Text(L("Hoa đầu")).tag(TextCase.title)
-                }
-                .pickerStyle(.segmented).labelsHidden().frame(width: 210)
-                .tint(Theme.accent)
+            }
+            let casePicker = Picker("", selection: Binding(
+                get: { style.textCase },
+                set: { v in perform("Kiểu hoa/thường", t) { $0.textCase = v } }
+            )) {
+                Text(L("Giữ")).tag(TextCase.none)
+                Text(L("HOA")).tag(TextCase.upper)
+                Text(L("thường")).tag(TextCase.lower)
+                Text(L("Hoa đầu")).tag(TextCase.title)
+            }
+            .pickerStyle(.segmented).labelsHidden()
+            .tint(Theme.accent)
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: Theme.Space.m) { bius; Spacer(minLength: 0); casePicker.fixedSize() }
+                VStack(alignment: .leading, spacing: Theme.Space.s) { bius; casePicker }
             }
 
             slider("Giãn ký tự", style.characterSpacing, -5...30, suffix: "") { v in edit("Giãn ký tự", t) { $0.characterSpacing = v } }
@@ -568,49 +573,15 @@ struct StylePanel<AfterContent: View>: View {
         AppColorField(color: color, label: L(title), defaultValue: def, onChange: set)
     }
 
+    /// Hàng trượt của inspector (nhãn + số ở trên, thanh ở dưới) — dùng `KMSliderRow` chung (tô accent, ghi ≤ 20 lần/giây).
     private func slider(_ title: String, _ value: Double, _ range: ClosedRange<Double>, suffix: String, onChange: @escaping (Double) -> Void) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            HStack {
-                Text(L(title)).font(Theme.Typo.label)
-                Spacer()
-                Text("\(Int(value.rounded()))\(suffix)").font(Theme.Typo.mono).foregroundStyle(Theme.inkDim)
-            }
-            DragSlider(value: value, range: range, onChange: onChange)
-        }
+        KMSliderRow(label: L(title), value: value, range: range, stacked: true,
+                    format: { "\(Int($0.rounded()))\(suffix)" }, onChange: onChange)
     }
 
     private func percentSlider(_ title: String, _ value: Double, _ range: ClosedRange<Double>, onChange: @escaping (Double) -> Void) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            HStack {
-                Text(L(title)).font(Theme.Typo.label)
-                Spacer()
-                Text("\(Int((value * 100).rounded()))%").font(Theme.Typo.mono).foregroundStyle(Theme.inkDim)
-            }
-            DragSlider(value: value, range: range, onChange: onChange)
-        }
-    }
-
-    /// Slider có TIẾT LƯU: lúc kéo chỉ ghi store ~11Hz (đỡ dựng lại ContentView 30-60Hz),
-    /// thả tay ghi giá trị cuối. Nút vẫn chạy mượt theo `live`.
-    private struct DragSlider: View {
-        let value: Double
-        let range: ClosedRange<Double>
-        let onChange: (Double) -> Void
-        @State private var live: Double?
-        @State private var lastPush = Date.distantPast
-        var body: some View {
-            Slider(value: Binding(
-                get: { live ?? value },
-                set: { v in
-                    live = v
-                    let now = Date()
-                    if now.timeIntervalSince(lastPush) > 0.09 { lastPush = now; onChange(v) }
-                }),
-                in: range,
-                onEditingChanged: { editing in
-                    if !editing { if let v = live { onChange(v) }; live = nil }
-                })
-        }
+        KMSliderRow(label: L(title), value: value, range: range, stacked: true,
+                    format: { "\(Int(($0 * 100).rounded()))%" }, onChange: onChange)
     }
 
     /// Áp thay đổi vào style câu chính HOẶC câu nhắc, tuỳ `t`.

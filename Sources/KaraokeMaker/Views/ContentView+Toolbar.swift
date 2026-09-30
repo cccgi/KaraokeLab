@@ -87,10 +87,27 @@ extension ContentView {
         // kết quả của project A không bao giờ lọt vào project B.
         .onChange(of: store.projectSessionID) { _ in
             autoKaraoke.cancel(); createMode = nil; autoUncertain = []
+            karaokeInputChanged = false
+            classicVizBackup = nil
         }
         .onDisappear { autoKaraoke.cancel() }
         #if KM_GUITEST
         .onReceive(NotificationCenter.default.publisher(for: Notification.Name("KMGUITest.toggleKaraoke"))) { _ in toggleKaraoke() }
+        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("KMGUITest.togglePlay"))) { _ in playback.togglePlayPause() }
+        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("KMGUITest.ui"))) { n in
+            // Chụp ảnh giao diện (Scripts/ui-check.sh): chuyển tab trái / mở-đóng bảng Xuất không cần chuột.
+            switch n.object as? String ?? "" {
+            case "steps": leftPanelTab = .steps
+            case "background": leftPanelTab = .background
+            case "lyrics": leftPanelTab = .lyrics
+            case "text": leftPanelTab = .text
+            case "visualizer": leftPanelTab = .visualizer
+            case "files": leftPanelTab = .files
+            case "export": showExportSheet = true
+            case "closeexport": showExportSheet = false
+            default: break
+            }
+        }
         #endif
     }
 

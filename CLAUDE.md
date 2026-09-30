@@ -22,14 +22,14 @@ sửa hỏng, user cấm):
 ## Build / Run
 - **Swift Package** (không phải .xcodeproj). `swift-tools 5.9`, macOS 13, build **x86_64**.
 - Build: `swift build -c release` (trên iMac Intel, ~60–110s).
-- Chạy thử: (2026-09-24) user test TRỰC TIẾP trên máy iMac 2017 này — KHÔNG đẩy qua MacBook M4
-  nữa. `~/Desktop/KaraokeMaker` là symlink trỏ `dist/KaraokeMaker.app`. Sau MỖI lần sửa code, kết
-  bằng ĐÚNG 1 khối:
+- Chạy thử (2026-09-29, luật của chủ dự án): làm xong MỖI việc → kết bằng ĐÚNG 1 khối mở BẢN THỬ riêng
+  (không đụng app chính `dist/`):
   ```
-  cd ~/ClaudeProjects/KaraokeApp && ./Scripts/pack-local.sh && (killall KaraokeMaker 2>/dev/null; sleep 0.3; true) && open ~/Desktop/KaraokeMaker
+  cd ~/ClaudeProjects/KaraokeApp && ./Scripts/pack-test.sh
   ```
-  Không tự chạy khối đó. Không gửi file `.app` qua chat. (Cách cũ `push-m4.sh` qua MacBook — chỉ
-  dùng lại nếu user yêu cầu lại.)
+  (build + đóng gói "~/Desktop/KaraokeMaker THIẾT KẾ MỚI.app" + mở). Không tự chạy khối đó. Chỉ khi chủ dự án
+  thử xong và nói OK / "update" mới cập nhật app chính (`./Scripts/pack-local.sh` → `~/Desktop/KaraokeMaker`)
+  và đưa lên git. Không gửi file `.app` qua chat. (`push-m4.sh` qua MacBook — chỉ khi user yêu cầu lại.)
 - `swift build` có thể "database is locked" nếu lần build trước chưa xong — chờ
   `pgrep -f "swift-build -c release"` hết rồi build lại.
 
@@ -56,8 +56,9 @@ sửa hỏng, user cấm):
   (khoilephoto/viet-lyrics-lab) — KHÔNG bao giờ đưa lab, lời bài hát, audio, model, `.build*` lên repo app.
 - Mở phiên: hook `.claude/settings.json` tự `git pull --ff-only`. Nếu hook báo "KHÔNG thành công" → trước khi làm việc:
   `git status`; có thay đổi dở → commit; lệch nhánh → `git pull --rebase`, gỡ xung đột (giữ thay đổi của CẢ HAI người), báo user.
-- Xong MỖI lô việc (build OK / test xong) → TỰ `git add -A && git commit -m "<mô tả ngắn>" && git push`, không cần hỏi lại.
-  Push bị từ chối vì người kia vừa đẩy → `git pull --rebase` rồi push lại. Trước commit xem `git status`: không file > 50 MB.
+- **KHÔNG tự commit / push** (luật mới 2026-09-29): làm xong → đưa khối mở bản thử; CHỈ khi chủ dự án thử xong và yêu cầu
+  "update lên git" mới `git add -A && git commit -m "<mô tả ngắn>" && git pull --rebase && git push`. Trước commit xem
+  `git status`: không file > 50 MB.
 - Push bị chặn (thiếu đăng nhập / hệ thống an toàn) → đưa user ĐÚNG 1 lệnh để bấm Run.
 - Hai người tránh sửa cùng 1 file cùng lúc; ai làm phần nào thì ghi vào `docs/PROGRESS.md`.
 

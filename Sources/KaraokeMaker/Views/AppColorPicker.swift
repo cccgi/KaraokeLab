@@ -401,13 +401,11 @@ struct AppFillPopover: View {
                 if selIdx > 0, selIdx < f.stops.count - 1 {
                     HStack(spacing: 6) {
                         Text(L("Vị trí")).font(Theme.Typo.helper).foregroundStyle(Theme.inkFaint)
-                        Slider(value: Binding(
-                            get: { f.stops[selIdx].loc },
-                            set: { v in
-                                let lo = f.stops[selIdx - 1].loc + 0.02
-                                let hi = f.stops[selIdx + 1].loc - 0.02
-                                f.stops[selIdx].loc = max(lo, min(hi, v)); push()
-                            }), in: 0...1)
+                        KMSlider(value: f.stops[selIdx].loc, range: 0...1, accessibilityLabel: L("Vị trí")) { v in
+                            let lo = f.stops[selIdx - 1].loc + 0.02
+                            let hi = f.stops[selIdx + 1].loc - 0.02
+                            f.stops[selIdx].loc = max(lo, min(hi, v)); push()
+                        }
                         Text("\(Int(f.stops[selIdx].loc * 100))%").font(.caption2.monospacedDigit())
                             .foregroundStyle(.secondary).frame(width: 34, alignment: .trailing)
                     }
@@ -416,7 +414,7 @@ struct AppFillPopover: View {
                 if f.style == .linear {
                     HStack(spacing: 6) {
                         Text(L("Góc")).font(Theme.Typo.helper).foregroundStyle(Theme.inkFaint)
-                        Slider(value: Binding(get: { f.angle }, set: { f.angle = $0.rounded(); push() }), in: 0...360)
+                        KMSlider(value: f.angle, range: 0...360, accessibilityLabel: L("Góc")) { f.angle = $0.rounded(); push() }
                         ForEach([("→", 0.0), ("↓", 90.0), ("↘", 45.0)], id: \.1) { sym, deg in
                             Button(sym) { f.angle = deg; push() }
                                 .buttonStyle(.plain)
