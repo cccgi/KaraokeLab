@@ -16,7 +16,7 @@ enum Theme {
     // MARK: Chữ
     static let ink         = Color.white.opacity(0.92)   // chữ chính
     static let inkDim      = Color.white.opacity(0.60)   // chữ phụ, nhãn
-    static let inkFaint    = Color.white.opacity(0.40)   // gợi ý, đơn vị, thước timeline
+    static let inkFaint    = Color.white.opacity(0.50)   // gợi ý, đơn vị, thước timeline (≥ 4.5:1 trên panel — 40% chỉ đạt ~3.7:1)
     static let inkDisabled = Color.white.opacity(0.25)   // chữ / icon bị khoá
 
     // MARK: Nhấn + trạng thái
@@ -42,7 +42,7 @@ enum Theme {
         static let stroke    = NSColor.white.withAlphaComponent(0.07)
         static let ink       = NSColor.white.withAlphaComponent(0.92)
         static let inkDim    = NSColor.white.withAlphaComponent(0.60)
-        static let inkFaint  = NSColor.white.withAlphaComponent(0.40)
+        static let inkFaint  = NSColor.white.withAlphaComponent(0.50)
         static let accent    = Theme.accentNS
         static let warning   = NSColor(srgbRed: 0xD6 / 255, green: 0xA4 / 255, blue: 0x45 / 255, alpha: 1)
         static let error     = NSColor(srgbRed: 0xE5 / 255, green: 0x53 / 255, blue: 0x4B / 255, alpha: 1)

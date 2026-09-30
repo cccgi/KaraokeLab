@@ -32,11 +32,10 @@ struct TrialBanner: View {
                      ? "Bản dùng thử còn \(daysRemaining) ngày"
                      : "Bản dùng thử hết hạn hôm nay")
             }
-            .font(.system(size: 11, weight: .medium))
-            .foregroundColor(.orange)
-            .padding(.horizontal, 10).padding(.vertical, 4)
-            .background(Color.orange.opacity(0.12))
-            .cornerRadius(6)
+            .font(Theme.Typo.helper.weight(.medium))
+            .foregroundColor(Theme.warning)
+            .padding(.horizontal, Theme.Space.m).padding(.vertical, Theme.Space.xs)
+            .background(RoundedRectangle(cornerRadius: Theme.Radius.sm).fill(Theme.warning.opacity(0.12)))
         }
     }
 }

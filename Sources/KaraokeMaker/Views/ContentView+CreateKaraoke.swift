@@ -286,7 +286,7 @@ extension ContentView {
             .onDrag { NSItemProvider(object: Self.newTextDragToken as NSString) }
 
             Text(L("Bấm để thêm ở vạch đỏ, hoặc KÉO nút này thả xuống làn lớp đè trên timeline. Lớp chữ hoạt động như lớp ảnh: kéo–giãn–xoay trên màn hình xem trước, chỉnh bên phải."))
-                .font(.caption2).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                .font(Theme.Typo.helper).foregroundStyle(Theme.inkFaint).fixedSize(horizontal: false, vertical: true)
 
             if !textClips.isEmpty {
                 Divider()

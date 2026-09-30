@@ -108,6 +108,7 @@ struct ContentView: View {
     var advanced: AdvancedKaraoke { advancedProxy.source }
     @State var exportAudioChoice: ExportAudioChoice = .original
     @State var exportProRes = false
+    @State var exportAdvancedOpen = false
     @AppStorage("kmShowSafeArea") var showSafeArea = false
 
     // Song ca / đánh dấu người hát
@@ -336,18 +337,19 @@ struct ContentView: View {
     /// Pop-up "Xuất" (kiểu CapCut) — SRT / ASS / nền / video, mở từ nút Xuất trên thanh trên.
     var exportSheet: some View {
         VStack(spacing: 0) {
-            HStack(spacing: 8) {
-                Image(systemName: "square.and.arrow.up").foregroundStyle(Theme.accent)
-                Text(L("Xuất")).font(.system(size: 15, weight: .semibold)).foregroundColor(Theme.ink)
+            HStack(spacing: Theme.Space.m) {
+                Image(systemName: "square.and.arrow.up").foregroundStyle(Theme.inkDim)
+                Text(L("Xuất")).font(Theme.Typo.sheetTitle).foregroundColor(Theme.ink)
                 Spacer()
                 Button(L("Đóng")) { showExportSheet = false }
+                    .buttonStyle(.kmSecondarySmall)
                     .keyboardShortcut(.cancelAction)
             }
-            .padding(Theme.Metric.pad)
+            .padding(.horizontal, Theme.Space.xl).padding(.vertical, Theme.Space.l)
             Divider().overlay(Theme.stroke)
-            ScrollView { exportTabContent.padding(Theme.Metric.pad + 2) }
+            ScrollView { exportTabContent.padding(Theme.Space.xl) }
         }
-        .frame(width: 580, height: 660)
+        .frame(width: 560, height: 640)
         .background(Theme.panel)
     }
 
@@ -408,14 +410,15 @@ struct ContentView: View {
     var errorBar: some View {
         if let error = store.lastError ?? playback.lastError ?? videoExporter.lastError {
             Divider()
-            HStack(spacing: 8) {
-                Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.red)
-                Text(error).font(.callout).foregroundStyle(.red)
+            // Thanh lỗi mảnh: icon đỏ + chữ thường (không tô đỏ cả dòng) — DESIGN_SYSTEM §19.
+            HStack(spacing: Theme.Space.m) {
+                Image(systemName: "exclamationmark.octagon.fill").foregroundStyle(Theme.error)
+                Text(error).font(Theme.Typo.label).foregroundStyle(Theme.ink).lineLimit(2)
                 Spacer()
                 Button(L("Ẩn")) { store.lastError = nil; playback.clearError() }
-                    .controlSize(.small)
+                    .buttonStyle(.kmSecondarySmall)
             }
-            .padding(.horizontal, 16).padding(.vertical, 8)
+            .padding(.horizontal, Theme.Space.l).padding(.vertical, Theme.Space.s)
             .background(Theme.panelAlt)
         }
     }

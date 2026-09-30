@@ -109,7 +109,7 @@ extension ContentView {
         // Sổ ra sẵn — các control luôn HIỆN, chỉ mờ + khoá khi chưa bật.
         Group {
             Text(L("Vẽ theo nhạc GỐC bạn bỏ vào. Mặc định full bề ngang — chỉnh cỡ / vị trí bên dưới."))
-                .font(.caption2).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                .font(Theme.Typo.helper).foregroundStyle(Theme.inkFaint).fixedSize(horizontal: false, vertical: true)
             Picker(L("Kiểu"), selection: v.style) {
                 ForEach(MusicVisualizer.Style.allCases) { Text($0.label).tag($0) }
             }.controlSize(.small)
@@ -126,7 +126,7 @@ extension ContentView {
 
             HStack(spacing: 8) {
                 Text(L("Chuyển động")).font(.caption.bold())
-                if !vizKF.isEmpty { Text(String(format: L("%d mốc"), vizKF.count)).font(.caption2).foregroundStyle(.secondary) }
+                if !vizKF.isEmpty { Text(String(format: L("%d mốc"), vizKF.count)).font(Theme.Typo.helper).foregroundStyle(Theme.inkFaint) }
                 Spacer()
                 if !vizKF.isEmpty {
                     Button { store.perform(L("Xoá chuyển động sóng")) { store.project.visualizer?.keyframes = [] } }
@@ -161,7 +161,7 @@ extension ContentView {
             Text(vizKF.isEmpty
                  ? L("Bấm ◇ để bắt đầu. Rồi dời vạch đỏ + chỉnh cỡ/vị trí/độ mờ (hoặc kéo sóng trên màn hình xem trước) → tự tạo mốc.")
                  : L("Dời vạch đỏ tới lúc khác, chỉnh cỡ/vị trí/độ mờ → tự ghi mốc."))
-                .font(.caption2).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                .font(Theme.Typo.helper).foregroundStyle(Theme.inkFaint).fixedSize(horizontal: false, vertical: true)
             overlaySlider("Sáng (glow)", v.glow, 0...1, "%.2f")
             overlaySlider("Độ nhạy", v.sensitivity, 0.3...3, "%.2f")
             overlaySlider("Độ mượt", v.smoothing, 0...1, "%.2f")

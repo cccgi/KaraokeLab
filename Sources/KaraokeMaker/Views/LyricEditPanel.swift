@@ -104,7 +104,7 @@ struct LyricEditPanel: View {
                                 Button(alt) { onApplyAlternative(u, alt) }.controlSize(.small)
                             }
                             Button(L("Giữ nguyên")) { onDismissUncertain(u) }.controlSize(.small)
-                            if u.kind == .possibleMissing { Text(L("(có thể thiếu từ)")).font(.caption2).foregroundStyle(Theme.inkDim) }
+                            if u.kind == .possibleMissing { Text(L("(có thể thiếu từ)")).font(Theme.Typo.helper).foregroundStyle(Theme.inkFaint) }
                             Spacer(minLength: 0)
                         }
                     }

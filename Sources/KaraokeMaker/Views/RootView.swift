@@ -66,9 +66,8 @@ struct RootView: View {
             Button { tabs.openNewTab() } label: {
                 Image(systemName: "plus")
             }
-            .buttonStyle(.plain)
-            .foregroundColor(.white.opacity(0.7))
-            .padding(.horizontal, 8)
+            .buttonStyle(.kmIcon)
+            .padding(.horizontal, Theme.Space.xs)
             .help(L("Mở project khác trong tab mới"))
             Spacer()
         }
@@ -78,24 +77,24 @@ struct RootView: View {
 
     private func tabChip(_ tab: ProjectTab) -> some View {
         let isActive = tab.id == tabs.activeID
-        return HStack(spacing: 6) {
+        return HStack(spacing: Theme.Space.s) {
             Text(tab.store.project.name)
-                .font(.system(size: 11.5, weight: isActive ? .semibold : .regular))
+                .font(.system(size: 12, weight: isActive ? .semibold : .regular))
                 .lineLimit(1)
                 .frame(maxWidth: 150, alignment: .leading)
             if tab.store.hasUnsavedChanges {
-                Circle().fill(Color.orange).frame(width: 5, height: 5)
+                Circle().fill(Theme.inkDim).frame(width: 5, height: 5).help(L("Có thay đổi chưa lưu"))
             }
             Button { closeTab(tab.id) } label: {
-                Image(systemName: "xmark").font(.system(size: 9))
+                Image(systemName: "xmark").font(.system(size: 9, weight: .semibold))
             }
             .buttonStyle(.plain)
             .opacity(0.6)
+            .help(L("Đóng tab"))
         }
-        .padding(.horizontal, 10).padding(.vertical, 6)
-        .background(isActive ? Theme.panel : Color.clear)
-        .foregroundColor(.white.opacity(isActive ? 0.95 : 0.55))
-        .cornerRadius(6)
+        .padding(.horizontal, Theme.Space.m).padding(.vertical, Theme.Space.s)
+        .background(RoundedRectangle(cornerRadius: Theme.Radius.md).fill(isActive ? Theme.panel : Color.clear))
+        .foregroundColor(isActive ? Theme.ink : Theme.inkFaint)
         .contentShape(Rectangle())
         .onTapGesture { tabs.activeID = tab.id }
     }

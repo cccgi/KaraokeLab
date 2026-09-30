@@ -124,7 +124,7 @@ extension ContentView {
                             beatZoomAmountBinding.wrappedValue = v
                         }
                         Text(L("Nền phóng to nhẹ theo tiếng bass, tự mượt lại — không giật."))
-                            .font(.caption2).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                            .font(Theme.Typo.helper).foregroundStyle(Theme.inkFaint).fixedSize(horizontal: false, vertical: true)
                     }
                 }
                 .padding(8)
@@ -151,7 +151,7 @@ extension ContentView {
             }
             if store.project.overlays.isEmpty {
                 Text(L("Chưa có. Thêm logo hoặc ảnh graded để đè lên video."))
-                    .font(.caption2).foregroundStyle(.secondary)
+                    .font(Theme.Typo.helper).foregroundStyle(Theme.inkFaint)
             } else {
                 ForEach(store.project.overlays) { clip in
                     VStack(alignment: .leading, spacing: 4) {
@@ -236,11 +236,11 @@ extension ContentView {
         VStack(alignment: .leading, spacing: 9) {
             if locked {
                 Label(L("Đã khoá — mở khoá ở danh sách bên trái để sửa"), systemImage: "lock.fill")
-                    .font(.caption2).foregroundStyle(.secondary)
+                    .font(Theme.Typo.helper).foregroundStyle(Theme.inkFaint)
             }
             HStack(spacing: 6) {
                 Text(L("Kéo–giãn–xoay trên màn hình xem trước · bấm đúp chữ để sửa nhanh."))
-                    .font(.caption2).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                    .font(Theme.Typo.helper).foregroundStyle(Theme.inkFaint).fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: 4)
                 Menu {
                     Button(L("Lưu kiểu hiện tại…")) {
@@ -415,7 +415,7 @@ extension ContentView {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 8) {
                 Text(L("Chuyển động")).font(.caption.bold())
-                if hasAny { Text(String(format: L("%d mốc"), clip.keyframes.count)).font(.caption2).foregroundStyle(.secondary) }
+                if hasAny { Text(String(format: L("%d mốc"), clip.keyframes.count)).font(Theme.Typo.helper).foregroundStyle(Theme.inkFaint) }
                 Spacer()
                 if hasAny {
                     Button { store.perform(L("Xoá chuyển động")) {
@@ -446,7 +446,7 @@ extension ContentView {
 
             if let ki = nearIdx {
                 HStack(spacing: 6) {
-                    Text(L("Kiểu chạy")).font(.caption2).foregroundStyle(.secondary)
+                    Text(L("Kiểu chạy")).font(Theme.Typo.helper).foregroundStyle(Theme.inkFaint)
                     Picker("", selection: Binding(
                         get: { clip.keyframes[ki].ease },
                         set: { v in store.edit(L("Kiểu keyframe")) {
@@ -493,7 +493,7 @@ extension ContentView {
             Text(hasAny
                  ? L("Dời vạch đỏ tới chỗ khác, kéo–giãn–xoay lớp trên màn hình xem trước → tự ghi mốc.")
                  : L("Bấm ◇ để bắt đầu. Rồi dời vạch đỏ + chỉnh lớp → app tự tạo mốc."))
-                .font(.caption2).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                .font(Theme.Typo.helper).foregroundStyle(Theme.inkFaint).fixedSize(horizontal: false, vertical: true)
         }
     }
 
@@ -502,7 +502,7 @@ extension ContentView {
         let halfDur = max(0.1, b.wrappedValue.duration / 2)
         return VStack(alignment: .leading, spacing: 8) {
             Text(L("Clip tiếng — trộn kèm bài hát chính khi phát thử và khi xuất video."))
-                .font(.caption2).foregroundStyle(.secondary)
+                .font(Theme.Typo.helper).foregroundStyle(Theme.inkFaint)
                 .fixedSize(horizontal: false, vertical: true)
             Toggle(L("Tắt tiếng clip này"), isOn: b.audioMuted)
                 .toggleStyle(.checkbox).font(.caption)
@@ -526,11 +526,11 @@ extension ContentView {
             VStack(alignment: .leading, spacing: 8) {
                 if locked {
                     Label(L("Đã khoá — mở khoá ở danh sách bên trái để sửa"), systemImage: "lock.fill")
-                        .font(.caption2).foregroundStyle(.secondary)
+                        .font(Theme.Typo.helper).foregroundStyle(Theme.inkFaint)
                 }
 
                 Text(L("Kéo–giãn–xoay trực tiếp trên màn hình xem trước. Thời điểm hiện / mất chỉnh ở timeline."))
-                    .font(.caption2).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                    .font(Theme.Typo.helper).foregroundStyle(Theme.inkFaint).fixedSize(horizontal: false, vertical: true)
 
                 VStack(alignment: .leading, spacing: 5) {
                     overlaySlider("Độ mờ", opacityKFBinding(b), 0...1, "%.2f")

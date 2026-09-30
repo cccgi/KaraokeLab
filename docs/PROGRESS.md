@@ -1,6 +1,17 @@
 # PROGRESS
 
 ## CURRENT MILESTONE
+### 2026-09-29 (đêm, sau) — THIẾT KẾ LẠI GIAO DIỆN: XONG 9 CHẶNG (chờ chủ dự án duyệt bản thử)
+- Chặng 1–9: token + nút 3 cấp (`Theme.swift`); toolbar chỉ "Xuất" là nút chính; khung ưu tiên preview (cửa sổ min 1180); cột trái phẳng
+  (tab ✓, bước đánh số không hộp, bỏ emoji); preview phẳng (bỏ bóng/bo); inspector `PanelHeader` + token; timeline màu theo nghĩa, SF
+  Symbols thay emoji, từ chưa chắc gạch chân; 2 thẻ "Có lời / Không cần lời" ngang nhau, tiến trình gọn + đồng hồ (giữ 2 chặng riêng);
+  bảng màu tiêu đề + chấm "đã chỉnh"; bảng Xuất: Video trước → 1 nút chính "Xuất video", SRT/ASS thành nút phụ, "Nâng cao" gập; thanh lỗi,
+  Home (bỏ gradient), tab, Thùng rác. Tương phản chữ gợi ý 40% → 50%.
+- Tính năng mới: tab "Sửa lời" cuộn theo vạch đỏ (dòng đang hát sáng + giữa) — ticker cục bộ, không kéo cả cửa sổ.
+- Sửa hiệu năng: ảnh thu nhỏ kho Media + Home có cache (trước giải mã nguyên file mỗi lần vẽ lại).
+- `docs/UI_AUDIT.md`, `docs/DESIGN_SYSTEM.md`, `docs/UI_REVIEW_FINAL.md`. Duyệt: `./Scripts/pack-test.sh` → "KaraokeMaker THIẾT KẾ MỚI"
+  trên Desktop (app chính `dist/` CHƯA đổi). Build release OK (Swift 5.9 / Intel); `--autolyrics-test selftest` đạt.
+
 ### 2026-09-29 (đêm) — THIẾT KẾ LẠI GIAO DIỆN: PHA 1–2 (khảo sát + hệ thiết kế), CHƯA SỬA CODE
 - `docs/UI_AUDIT.md`: điểm mạnh giữ lại, điểm yếu có dẫn chứng file/dòng (15 nút xanh đặc, 18 cỡ chữ, 19 mức padding, preview
   không ưu tiên, thẻ bọc thẻ, ~10 màu trên timeline, emoji trong UI, inspector không theo ngữ cảnh), rủi ro hiệu năng phải giữ.

@@ -218,7 +218,7 @@ struct StylePanel<AfterContent: View>: View {
                 .multilineTextAlignment(.center)
                 .minimumScaleFactor(0.7)
             if let tag {
-                Text(tag).font(.system(size: 7, weight: .semibold)).foregroundStyle(text.opacity(0.75))
+                Text(tag).font(Theme.Typo.badge).foregroundStyle(text.opacity(0.75)).lineLimit(1).minimumScaleFactor(0.8)
             }
         }
         .frame(width: 96, height: 44)

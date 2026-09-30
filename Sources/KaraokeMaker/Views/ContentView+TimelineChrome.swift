@@ -99,7 +99,7 @@ extension ContentView {
             }
             HStack(spacing: 10) {
                 Text(L("Bấm khối câu trên timeline rồi chọn icon · bấm “Song ca” lần nữa để thoát"))
-                    .font(.caption2).foregroundStyle(.secondary)
+                    .font(Theme.Typo.helper).foregroundStyle(Theme.inkFaint)
                 Button(L("Bỏ đánh dấu dòng này")) { assignSingerTimeline(currentLineIndex, nil) }
                     .controlSize(.small)
                     .disabled(!(store.project.lines.indices.contains(currentLineIndex)

@@ -79,3 +79,8 @@ Status: NOT_STARTED · PARTIAL · FUNCTIONAL · VERIFIED · BROKEN · NEEDS_REFA
 | C-17 | LUT (.cube) | FUNCTIONAL | `parseCube` → `CIColorCubeWithColorSpace` + intensity blend (`kmMix`). |
 | C-18 | Histogram + Scopes | FUNCTIONAL | `ColorScopes`: Biểu đồ (`CIAreaHistogram`) + RGB Parade + Vectorscope (`scopeSamples`). Ảnh/nền-ảnh. |
 | C-19 | Trước/Sau + Copy/Paste + Preset màu | FUNCTIONAL | `ColorPipeline.bypass` + `copiedColor` + `ColorPresetStore` (.color-presets.json). |
+| UI-1 | Hệ thiết kế (token màu/chữ/khoảng cách/bo góc/chiều cao, nút 3 cấp, PanelHeader, ChoiceCard) | FUNCTIONAL | `Views/Theme.swift`, quy chuẩn `docs/DESIGN_SYSTEM.md`, đánh giá `docs/UI_REVIEW_FINAL.md`. Chờ chủ dự án duyệt bản thử (`Scripts/pack-test.sh`). |
+| UI-2 | Thiết kế lại 9 khu (toolbar, cột trái, preview, inspector, timeline, luồng lời, màu, xuất, hộp thoại/Home) | FUNCTIONAL | 2026-09-29. Không đổi thuật toán / engine. Còn tồn: inspector Nhạc/Dự án, segmented khung hình xuất (xem UI_REVIEW_FINAL §7). |
+| UI-3 | Tab "Sửa lời" đi theo vạch đỏ (dòng đang hát sáng + nằm giữa) | FUNCTIONAL | `LyricFollowTicker` cục bộ trong `LyricEditPanel` (không dựng lại `ContentView`). |
+| UI-4 | Từ chưa chắc gạch chân trên timeline | FUNCTIONAL | `TimelineCanvasView.setUncertainWordKeys` — chỉ khi số ô chữ khớp số từ trong câu. |
+| UI-5 | Ảnh thu nhỏ có cache (kho Media + Home) | FUNCTIONAL | `MediaThumbCache` (ImageIO) — trước giải mã nguyên ảnh mỗi lần vẽ lại. |

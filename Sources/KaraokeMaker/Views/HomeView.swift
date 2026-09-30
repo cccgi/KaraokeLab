@@ -69,66 +69,61 @@ struct HomeView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 16) {
-            HStack {
-                Text("KaraokeMaker").font(.system(size: 20, weight: .semibold)).foregroundColor(.white)
+            HStack(spacing: Theme.Space.s) {
+                Text("KaraokeMaker").font(Theme.Typo.homeTitle).foregroundColor(Theme.ink)
                 Spacer()
                 LanguagePicker()
                     .menuStyle(.borderlessButton)
                     .fixedSize()
-                    .foregroundColor(.white.opacity(0.8))
+                    .foregroundColor(Theme.inkDim)
                 Button {
                     if let url = FilePanels.chooseProjectToOpen() { onOpen(url) }
                 } label: {
                     Label(L("Mở project khác…"), systemImage: "folder")
                 }
-                .buttonStyle(.plain)
-                .foregroundColor(.white.opacity(0.8))
+                .buttonStyle(.kmSecondary)
                 Button { showTrash = true } label: {
                     Label(L("Thùng rác"), systemImage: "trash")
                 }
-                .buttonStyle(.plain)
-                .foregroundColor(.white.opacity(0.8))
+                .buttonStyle(.kmSecondary)
             }
 
+            // Hành động chính của Home — ô nhấn ĐẶC (không gradient), cao vừa phải.
             Button {
                 onCreate()
             } label: {
-                HStack(spacing: 10) {
-                    Image(systemName: "plus.circle.fill").font(.system(size: 22))
-                    Text(L("Tạo project")).font(.system(size: 17, weight: .semibold))
+                HStack(spacing: Theme.Space.m) {
+                    Image(systemName: "plus").font(.system(size: 16, weight: .semibold))
+                    Text(L("Tạo project")).font(Theme.Typo.sheetTitle)
                 }
                 .frame(maxWidth: .infinity)
-                .foregroundColor(.white)
-                .padding(.vertical, 28)
-                .background(
-                    LinearGradient(colors: [Theme.accent, Theme.accent.opacity(0.7)],
-                                   startPoint: .leading, endPoint: .trailing)
-                )
-                .cornerRadius(12)
+                .frame(height: 56)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.kmPrimaryLarge)
 
             if !entries.isEmpty {
-                HStack {
-                    Image(systemName: "magnifyingglass").foregroundColor(.white.opacity(0.5))
+                HStack(spacing: Theme.Space.s) {
+                    Image(systemName: "magnifyingglass").foregroundColor(Theme.inkFaint)
                     TextField(L("Tìm project theo tên…"), text: $search)
                         .textFieldStyle(.plain)
-                        .foregroundColor(.white)
+                        .font(Theme.Typo.body)
+                        .foregroundColor(Theme.ink)
                 }
-                .padding(.horizontal, 10).padding(.vertical, 7)
-                .background(Theme.panelAlt)
-                .cornerRadius(8)
+                .padding(.horizontal, Theme.Space.m)
+                .frame(height: Theme.ControlH.regular)
+                .background(RoundedRectangle(cornerRadius: Theme.Radius.sm).fill(Theme.elevated.opacity(0.6)))
+                .overlay(RoundedRectangle(cornerRadius: Theme.Radius.sm).stroke(Theme.stroke))
             }
         }
-        .padding(24)
+        .padding(Theme.Space.xxl)
     }
 
     private var emptyState: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: Theme.Space.m) {
             Spacer()
-            Image(systemName: "music.note.list").font(.system(size: 40)).foregroundColor(.white.opacity(0.25))
-            Text(L("Chưa có project nào")).foregroundColor(.white.opacity(0.6)).font(.system(size: 15, weight: .medium))
-            Text(L("Bấm “Tạo project” ở trên để bắt đầu.")).foregroundColor(.white.opacity(0.4)).font(.system(size: 13))
+            Image(systemName: "music.note.list").font(.system(size: 28)).foregroundColor(Theme.inkFaint)
+            Text(L("Chưa có project nào")).foregroundColor(Theme.ink).font(Theme.Typo.title)
+            Text(L("Bấm “Tạo project” ở trên để bắt đầu.")).foregroundColor(Theme.inkFaint).font(Theme.Typo.helper)
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -148,13 +143,13 @@ private struct ProjectCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             ZStack {
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(LinearGradient(colors: [Theme.panelAlt, Theme.elevated], startPoint: .top, endPoint: .bottom))
-                if let thumb = entry.thumbnailURL, let ns = NSImage(contentsOf: thumb) {
+                RoundedRectangle(cornerRadius: Theme.Radius.lg).fill(Theme.panelAlt)
+                // Ảnh bìa qua cache (thu nhỏ 1 lần) — trước giải mã nguyên file mỗi lần lưới vẽ lại (vd. mỗi phím gõ ô tìm).
+                if let thumb = entry.thumbnailURL, let ns = MediaThumbCache.image(for: thumb, maxPixel: 480) {
                     Image(nsImage: ns).resizable().aspectRatio(contentMode: .fill)
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                        .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.lg))
                 } else {
-                    Image(systemName: "music.mic").font(.system(size: 26)).foregroundColor(.white.opacity(0.22))
+                    Image(systemName: "music.mic").font(.system(size: 24)).foregroundColor(Theme.inkFaint)
                 }
                 if let d = entry.duration {
                     VStack {
@@ -173,11 +168,11 @@ private struct ProjectCard: View {
                 }
             }
             .aspectRatio(16.0/10.0, contentMode: .fit)
-            .clipShape(RoundedRectangle(cornerRadius: 10))
-            .overlay(RoundedRectangle(cornerRadius: 10).stroke(Theme.stroke, lineWidth: 1))
+            .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.lg))
+            .overlay(RoundedRectangle(cornerRadius: Theme.Radius.lg).stroke(Theme.stroke, lineWidth: 1))
 
-            HStack(spacing: 5) {
-                Text(entry.name).font(.system(size: 13, weight: .medium)).foregroundColor(.white).lineLimit(1)
+            HStack(spacing: Theme.Space.xs) {
+                Text(entry.name).font(.system(size: 13, weight: .medium)).foregroundColor(Theme.ink).lineLimit(1)
                 if entry.isExternal {
                     Image(systemName: "arrow.up.right.square")
                         .font(.system(size: 9))
@@ -194,8 +189,8 @@ private struct ProjectCard: View {
                 Spacer()
                 Text(relativeDate(entry.modifiedAt))
             }
-            .font(.system(size: 10, design: .monospaced))
-            .foregroundColor(.white.opacity(0.42))
+            .font(.system(size: 11).monospacedDigit())
+            .foregroundColor(Theme.inkFaint)
         }
     }
 
@@ -223,14 +218,14 @@ private struct TrashView: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack {
-                Text(L("Thùng rác")).font(.system(size: 16, weight: .semibold)).foregroundColor(.white)
+                Text(L("Thùng rác")).font(Theme.Typo.sheetTitle).foregroundColor(Theme.ink)
                 Spacer()
-                Button(L("Đóng"), action: onClose).foregroundColor(.white.opacity(0.8))
+                Button(L("Đóng"), action: onClose).buttonStyle(.kmSecondarySmall).keyboardShortcut(.cancelAction)
             }
-            .padding(16)
+            .padding(Theme.Space.xl)
             Divider().overlay(Theme.stroke)
             if entries.isEmpty {
-                Text(L("Thùng rác trống")).foregroundColor(.white.opacity(0.5)).padding(40)
+                Text(L("Thùng rác trống")).font(Theme.Typo.label).foregroundColor(Theme.inkFaint).padding(40)
             } else {
                 List {
                     ForEach(entries) { e in
@@ -241,6 +236,7 @@ private struct TrashView: View {
                                 ProjectLibrary.restore(e.url)
                                 reload(); onRestored()
                             }
+                            .buttonStyle(.kmSecondarySmall)
                             Button(L("Xoá vĩnh viễn"), role: .destructive) { pendingForever = e }
                         }
                         .listRowBackground(Theme.panel)
@@ -250,7 +246,7 @@ private struct TrashView: View {
             }
         }
         .frame(width: 480, height: 380)
-        .background(Theme.bg)
+        .background(Theme.panel)
         .onAppear(perform: reload)
         .alert(L("Xoá vĩnh viễn?"), isPresented: Binding(
             get: { pendingForever != nil }, set: { if !$0 { pendingForever = nil } }

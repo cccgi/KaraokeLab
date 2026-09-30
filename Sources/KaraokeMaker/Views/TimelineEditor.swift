@@ -152,16 +152,16 @@ struct TimelineEditor: View {
     private var karaokeHeadRow: some View {
         let muted = store.project.audioMuted
         return HStack(spacing: 5) {
-            Image(systemName: "star.fill")
-                .font(.system(size: 9))
+            Image(systemName: "music.mic")
+                .font(.system(size: 10))
                 .foregroundStyle(Theme.accent)
-            Text("Karaoke").font(.system(size: 10, weight: .semibold)).foregroundStyle(.secondary)
+            Text("Karaoke").font(Theme.Typo.badge).foregroundStyle(Theme.inkDim)
             Spacer(minLength: 0)
             Button {
                 store.perform(muted ? L("Bật tiếng karaoke") : L("Tắt tiếng karaoke")) { store.project.audioMuted.toggle() }
             } label: {
                 Image(systemName: muted ? "speaker.slash.fill" : "speaker.wave.2")
-                    .font(.system(size: 9))
+                    .font(.system(size: 10))
                     .foregroundStyle(muted ? Color.orange : Color.secondary)
             }
             .buttonStyle(.borderless).help(L("Tắt / bật tiếng cả bản karaoke"))
@@ -181,7 +181,7 @@ struct TimelineEditor: View {
                 store.perform(muted ? L("Bật tiếng nhạc") : L("Tắt tiếng nhạc")) { store.project.audioMuted.toggle() }
             } label: {
                 Image(systemName: muted ? "speaker.slash.fill" : "speaker.wave.2")
-                    .font(.system(size: 9))
+                    .font(.system(size: 10))
                     .foregroundStyle(muted ? Color.orange : Color.secondary)
             }
             .buttonStyle(.borderless).help(L("Tắt / bật tiếng nhạc"))
@@ -201,7 +201,7 @@ struct TimelineEditor: View {
                 store.perform(hidden ? L("Hiện lời") : L("Ẩn lời")) { store.project.lyricsHidden.toggle() }
             } label: {
                 Image(systemName: hidden ? "eye.slash.fill" : "eye")
-                    .font(.system(size: 9))
+                    .font(.system(size: 10))
                     .foregroundStyle(hidden ? Color.orange : Color.secondary)
             }
             .buttonStyle(.borderless).help(L("Ẩn / hiện lớp chữ karaoke"))
@@ -229,25 +229,25 @@ struct TimelineEditor: View {
         let aMuted = laneAudioMuted(lane)
         return HStack(spacing: 3) {
             Text(String(format: L("Lớp đè %d"), lane + 1))
-                .font(.system(size: 8, weight: .semibold))
-                .foregroundStyle(has ? Color.secondary : Color.secondary.opacity(0.5))
+                .font(Theme.Typo.badge)
+                .foregroundStyle(has ? Theme.inkDim : Theme.inkFaint)
                 .lineLimit(1)
             Spacer(minLength: 0)
             Button { onToggleLaneAudioMuted(lane) } label: {
                 Image(systemName: aMuted ? "speaker.slash.fill" : "speaker.wave.2")
-                    .font(.system(size: 9))
+                    .font(.system(size: 10))
                     .foregroundStyle(aMuted ? Color.orange : Color.secondary)
             }
             .buttonStyle(.borderless).disabled(!hasAudio).help(L("Tắt / bật tiếng cả làn"))
             Button { onToggleLaneHidden(lane) } label: {
                 Image(systemName: hidden ? "eye.slash.fill" : "eye")
-                    .font(.system(size: 9))
+                    .font(.system(size: 10))
                     .foregroundStyle(hidden ? Color.orange : Color.secondary)
             }
             .buttonStyle(.borderless).disabled(!has).help(L("Ẩn / hiện cả làn"))
             Button { onToggleLaneLocked(lane) } label: {
                 Image(systemName: locked ? "lock.fill" : "lock.open")
-                    .font(.system(size: 9))
+                    .font(.system(size: 10))
                     .foregroundStyle(locked ? Color.orange : Color.secondary)
             }
             .buttonStyle(.borderless).disabled(!has).help(L("Khoá / mở khoá cả làn"))
@@ -320,7 +320,7 @@ struct TimelineEditor: View {
                 .background(Theme.bg.opacity(0.35))
 
                 Text(playback.isLoaded
-                     ? L("Click thước/sóng = tua vạch đỏ · kéo clip lớp đè = dời (kéo dọc đổi làn), kéo mép = cắt · ✂️ hoặc ⌘K = tách tại vạch đỏ · Delete = xoá · double-click sửa · S tách / M gộp ô chữ · ⌘C/⌘V dán · ←→ nudge.")
+                     ? L("Click thước/sóng = tua vạch đỏ · kéo clip lớp đè = dời (kéo dọc đổi làn), kéo mép = cắt · ⌘K = tách tại vạch đỏ · Delete = xoá · double-click sửa · S tách / M gộp ô chữ · ⌘C/⌘V dán · ←→ nudge.")
                      : L("Chưa có nhạc vẫn dùng được: click thước để tua vạch đỏ, ▶ để chạy thử. Kéo nhạc/ảnh/video từ “File của bạn” xuống các làn bên dưới."))
                     .font(Theme.Typo.helper).foregroundStyle(Theme.inkFaint).lineLimit(1).truncationMode(.tail)
             }
@@ -1447,7 +1447,7 @@ private final class TimelineCanvasView: NSView, NSTextFieldDelegate {
         ctx.fill(CGRect(x: 0, y: karaokeStripTop + karaokeStripH - 1, width: width, height: 1))
 
         guard karaokeHasContent else {
-            (L("★ KARAOKE — tạo karaoke xong sẽ hiện ở đây") as NSString).draw(
+            (L("KARAOKE — tạo karaoke xong sẽ hiện ở đây") as NSString).draw(
                 at: NSPoint(x: 8, y: karaokeStripTop + 5),
                 withAttributes: [.font: NSFont.systemFont(ofSize: 10),
                                  .foregroundColor: Theme.NS.inkFaint])

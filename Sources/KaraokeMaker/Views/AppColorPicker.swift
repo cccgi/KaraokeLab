@@ -400,7 +400,7 @@ struct AppFillPopover: View {
                 // Vị trí chặng giữa (2 đầu cố định 0% / 100%)
                 if selIdx > 0, selIdx < f.stops.count - 1 {
                     HStack(spacing: 6) {
-                        Text(L("Vị trí")).font(.caption2).foregroundStyle(.secondary)
+                        Text(L("Vị trí")).font(Theme.Typo.helper).foregroundStyle(Theme.inkFaint)
                         Slider(value: Binding(
                             get: { f.stops[selIdx].loc },
                             set: { v in
@@ -415,7 +415,7 @@ struct AppFillPopover: View {
 
                 if f.style == .linear {
                     HStack(spacing: 6) {
-                        Text(L("Góc")).font(.caption2).foregroundStyle(.secondary)
+                        Text(L("Góc")).font(Theme.Typo.helper).foregroundStyle(Theme.inkFaint)
                         Slider(value: Binding(get: { f.angle }, set: { f.angle = $0.rounded(); push() }), in: 0...360)
                         ForEach([("→", 0.0), ("↓", 90.0), ("↘", 45.0)], id: \.1) { sym, deg in
                             Button(sym) { f.angle = deg; push() }

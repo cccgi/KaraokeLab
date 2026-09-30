@@ -2,7 +2,7 @@
 
 Tinh thần: **phần mềm dựng phim cao cấp, tối, yên tĩnh, gọn** — kiểu Final Cut / Logic / CapCut Desktop. Chất lượng đến từ
 tỉ lệ, căn hàng, tiết chế và nhất quán — KHÔNG từ trang trí. Chỉ chế độ tối (app ép `.dark`). Hiệu năng Intel > hiệu ứng.
-Mọi giá trị dưới đây sống trong `Views/Theme.swift`; code giao diện KHÔNG viết số / màu tay (ngoại lệ phải ghi chú lý do).
+Mọi giá trị dưới đây sống trong `Views/Theme.swift` (`Theme.*`, `Theme.NS.*`, `Theme.Typo`, `Theme.Space`, `Theme.Radius`, `Theme.ControlH`); code giao diện KHÔNG viết số / màu tay (ngoại lệ phải ghi chú lý do).
 
 ## 1. Màu (token → giá trị → dùng cho)
 | Token (`Theme.`) | Giá trị | Dùng |
@@ -15,7 +15,7 @@ Mọi giá trị dưới đây sống trong `Views/Theme.swift`; code giao diệ
 | `strokeStrong` | trắng 14% | viền field, viền khi hover |
 | `ink` | trắng 92% | chữ chính |
 | `inkDim` | trắng 60% | chữ phụ, nhãn |
-| `inkFaint` (mới) | trắng 40% | chữ gợi ý, đơn vị, thước timeline |
+| `inkFaint` (mới) | trắng 50% (≥ 4.5:1 trên panel) | chữ gợi ý, đơn vị, thước timeline |
 | `inkDisabled` (mới) | trắng 25% | chữ / icon bị khoá |
 | `accent` | **#2395C5** (giữ — màu thương hiệu) | hành động chính, mục đang chọn, dòng đang hát, focus |
 | `accentSoft` | #2395C5 @16% | nền mục đang chọn |
@@ -30,7 +30,7 @@ Cấm: gradient trang trí, neon, tím–hồng, phát sáng, nền màu cho c�
 Bản `NSColor` cho AppKit: `Theme.NS.<token>` (`static let`, không tạo mới mỗi lần vẽ).
 
 ## 2. Chữ (SF Pro hệ thống, số dạng `.monospacedDigit()` cho mọi thời gian)
-| Token (`Theme.Font.`) | Cỡ / nét | Dùng |
+| Token (`Theme.Typo.`) | Cỡ / nét | Dùng |
 |---|---|---|
 | `title` | 13 semibold | tên dự án trên toolbar, tiêu đề workspace |
 | `panelTitle` | 11 semibold, IN HOA, kerning 0.4, `inkDim` | tiêu đề panel / mục (thay `sectionHeaderStyle` 12) |
@@ -154,3 +154,10 @@ Tương phản chữ ≥ 4.5:1 trên nền panel (ink / inkDim đạt; inkFaint 
 Không closure mới vào `.focusedSceneValue` / environment; không tính nặng trong `body`; không `.shadow` / `.blur` / `clipShape`
 quanh view cập nhật mỗi khung hình; không animation liên tục; màu AppKit là `static let`. Mỗi chặng đo CPU đứng yên / phát /
 cuộn timeline trên Intel trước–sau.
+
+## 23. Thành phần dùng chung (đã có trong `Theme.swift`)
+- Nút: `.kmPrimary` / `.kmPrimaryLarge`, `.kmSecondary` / `.kmSecondarySmall`, `.kmToggle(on)`, `.kmIcon` (`KMIconButtonStyle(selected:)`).
+- `PanelHeader(title:icon:trailing:)` — thanh tiêu đề 30pt.  `KMChoiceCard` — thẻ lựa chọn ngang nhau.  `ElapsedLabel` — đồng hồ "đã chạy".
+- `Theme.NS.symbol(name,size,color)` — SF Symbol tô màu, cache sẵn, để vẽ trong Core Graphics (timeline).
+- `MediaThumbCache.image(for:maxPixel:)` — ảnh thu nhỏ giải mã 1 lần (kho media, Home).
+- Duyệt thay đổi giao diện: `./Scripts/pack-test.sh` → "KaraokeMaker THIẾT KẾ MỚI.app" trên Desktop (không đụng app chính).

@@ -132,7 +132,7 @@ struct LyricLinesList: View {
         VStack(alignment: .leading, spacing: 6) {
             Divider()
 
-            Text(L("Lời dòng")).font(.caption2).foregroundStyle(.secondary)
+            Text(L("Lời dòng")).font(Theme.Typo.helper).foregroundStyle(Theme.inkFaint)
             TextEditor(text: Binding(
                 get: { line.text },
                 set: { onSetText(index, $0) }
@@ -160,7 +160,7 @@ struct LyricLinesList: View {
                         nudge: @escaping (Double) -> Void,
                         toPlayhead: @escaping () -> Void) -> some View {
         HStack(spacing: 6) {
-            Text(title).font(.caption2).foregroundStyle(.secondary)
+            Text(title).font(Theme.Typo.helper).foregroundStyle(Theme.inkFaint)
                 .frame(width: 50, alignment: .leading)
             TimeField(seconds: seconds, onCommit: set)
             Button("−0.05") { nudge(-0.05) }

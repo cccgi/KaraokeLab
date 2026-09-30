@@ -6,55 +6,59 @@ import Combine
 
 extension ContentView {
 
+    /// Bảng Xuất (DESIGN_SYSTEM §16): VIDEO trước (khung hình → âm thanh → nâng cao → nút chính "Xuất video"),
+    /// rồi PHỤ ĐỀ (SRT / ASS = nút phụ). Chỉ 1 nút chính trong cả sheet.
     var exportTabContent: some View {
         let cueCount = SrtExporter.timedCues(from: store.project).count
         let timedCount = store.project.lines.filter { $0.isTimed }.count
 
-        return VStack(alignment: .leading, spacing: 12) {
-            Text(L("Xuất SRT")).font(.headline)
+        return VStack(alignment: .leading, spacing: Theme.Space.l) {
+            transparentVideoBlock
+            Divider().overlay(Theme.stroke)
+            subtitleExportBlock(cueCount: cueCount, timedCount: timedCount)
+        }
+    }
+
+    func subtitleExportBlock(cueCount: Int, timedCount: Int) -> some View {
+        VStack(alignment: .leading, spacing: Theme.Space.m) {
+            Text(L("Phụ đề")).sectionHeaderStyle()
             Text(String(format: L("%d dòng có timing sẽ được xuất. (%d/%d dòng đã gán)"), cueCount, timedCount, store.project.lines.count))
-                .font(.callout).foregroundStyle(.secondary)
+                .font(Theme.Typo.helper).foregroundStyle(Theme.inkFaint)
 
             Toggle(L("Thêm BOM UTF-8"), isOn: Binding(
                 get: { store.project.exportSettings.srtIncludeBOM },
                 set: { newValue in store.perform(L("Đổi BOM")) { store.project.exportSettings.srtIncludeBOM = newValue } }
             ))
-            .toggleStyle(.checkbox)
+            .toggleStyle(.checkbox).font(Theme.Typo.label)
 
-            HStack(spacing: 10) {
+            HStack(spacing: Theme.Space.s) {
                 Button(L("Xuất SRT…")) { exportSRT() }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(.kmSecondary)
                     .disabled(cueCount == 0)
                 Button(showSrtPreview ? L("Ẩn xem trước") : L("Xem trước")) { showSrtPreview.toggle() }
+                    .buttonStyle(.kmSecondary)
                     .disabled(cueCount == 0)
+                Button(L("Xuất .ass…")) { exportASS() }
+                    .buttonStyle(.kmSecondary)
+                    .disabled(!store.project.hasAnyTiming)
+                    .help(L("Hiệu ứng \\kf quét sáng từng chữ. Dùng timing từng chữ nếu có, không thì chia đều. Mở bằng Aegisub / VLC."))
             }
 
-            Divider().padding(.vertical, 2)
-            Text(L("Xuất .ass (karaoke quét chữ)")).font(.headline)
-            Text(L("Hiệu ứng \\kf quét sáng từng chữ. Dùng timing từng chữ nếu có, không thì chia đều. Mở bằng Aegisub / VLC."))
-                .font(.caption2).foregroundStyle(.secondary)
-            Button(L("Xuất .ass…")) { exportASS() }
-                .buttonStyle(.borderedProminent)
-                .disabled(!store.project.hasAnyTiming)
-
             if let note = exportNote {
-                Text(note).font(.caption).foregroundStyle(.green)
+                Label(note, systemImage: "checkmark.circle.fill").font(Theme.Typo.label).foregroundStyle(Theme.success)
             }
 
             if showSrtPreview {
                 ScrollView {
                     Text(String(SrtExporter.makeSRT(from: store.project).prefix(1500)))
-                        .font(.system(.caption, design: .monospaced))
+                        .font(.system(size: 11, design: .monospaced))
                         .textSelection(.enabled)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(8)
+                        .padding(Theme.Space.m)
                 }
                 .frame(height: 160)
-                .background(RoundedRectangle(cornerRadius: 6).fill(Theme.panelAlt))
+                .background(RoundedRectangle(cornerRadius: Theme.Radius.sm).fill(Theme.panelAlt))
             }
-
-            Divider().padding(.vertical, 4)
-            transparentVideoBlock
         }
     }
 
@@ -65,15 +69,15 @@ extension ContentView {
         VStack(alignment: .leading, spacing: 8) {
             if let media = store.project.backgroundMedia {
                 HStack(spacing: 6) {
-                    Image(systemName: media.kind == .image ? "photo" : "film").foregroundStyle(.secondary)
-                    Text(media.fileName).font(.caption).lineLimit(1).truncationMode(.middle)
+                    Image(systemName: media.kind == .image ? "photo" : "film").foregroundStyle(Theme.inkDim)
+                    Text(media.fileName).font(Theme.Typo.label).lineLimit(1).truncationMode(.middle)
                     Spacer()
-                    Button(L("Đổi")) { pickBackground(media.kind) }.controlSize(.small)
-                    Button(L("Bỏ"), role: .destructive) { removeBackgroundMedia() }.controlSize(.small)
+                    Button(L("Đổi")) { pickBackground(media.kind) }.buttonStyle(.kmSecondarySmall)
+                    Button(L("Bỏ"), role: .destructive) { removeBackgroundMedia() }.buttonStyle(.kmSecondarySmall)
                 }
                 if backgroundImage == nil {
-                    Text(L("⚠︎ Không mở được file (đã di chuyển / đổi tên?)."))
-                        .font(.caption).foregroundStyle(.orange)
+                    Label(L("Không mở được file (đã di chuyển / đổi tên?)."), systemImage: "exclamationmark.triangle.fill")
+                        .font(Theme.Typo.helper).foregroundStyle(Theme.warning)
                 }
                 bgSlider("Phóng to", media.scale, 0.2...4) { v in editBackgroundMedia("Phóng nền") { $0.scale = v } }
                 bgSlider("Lệch ngang", media.offsetX, -0.5...0.5) { v in editBackgroundMedia("Lệch nền ngang") { $0.offsetX = v } }
@@ -84,12 +88,12 @@ extension ContentView {
                 Toggle(L("Tự chuyển động nhẹ (Ken Burns)"), isOn: Binding(
                     get: { media.kenBurns },
                     set: { on in editBackgroundMedia("Ken Burns nền") { $0.kenBurns = on } }))
-                    .font(.caption).toggleStyle(.checkbox)
+                    .font(Theme.Typo.label).toggleStyle(.checkbox)
                 if media.kind == .image {
                     Toggle(L("Lấp 2 bên bằng ảnh mờ (không cắt cúp)"), isOn: Binding(
                         get: { media.blurFill },
                         set: { on in editBackgroundMedia("Nền mờ lấp cạnh") { $0.blurFill = on } }))
-                        .font(.caption).toggleStyle(.checkbox)
+                        .font(Theme.Typo.label).toggleStyle(.checkbox)
                 }
 
                 Divider().padding(.vertical, 2)
@@ -105,8 +109,8 @@ extension ContentView {
                 }
             } else {
                 HStack(spacing: 6) {
-                    Button(L("Ảnh nền…")) { pickBackground(.image) }.controlSize(.small)
-                    Button(L("Video nền…")) { pickBackground(.video) }.controlSize(.small)
+                    Button(L("Ảnh nền…")) { pickBackground(.image) }.buttonStyle(.kmSecondarySmall)
+                    Button(L("Video nền…")) { pickBackground(.video) }.buttonStyle(.kmSecondarySmall)
                 }
             }
         }
@@ -114,10 +118,10 @@ extension ContentView {
 
     func bgSlider(_ title: String, _ value: Double, _ range: ClosedRange<Double>, _ onChange: @escaping (Double) -> Void) -> some View {
         HStack(spacing: 8) {
-            Text(L(title)).font(.caption).frame(width: 78, alignment: .leading)
+            Text(L(title)).font(Theme.Typo.label).foregroundStyle(Theme.inkDim).frame(width: 78, alignment: .leading)
             Slider(value: Binding(get: { value }, set: { onChange($0) }), in: range)
-            Text(String(format: "%.2f", value)).font(.caption2).monospacedDigit()
-                .foregroundStyle(.secondary).frame(width: 34, alignment: .trailing)
+            Text(String(format: "%.2f", value)).font(Theme.Typo.mono)
+                .foregroundStyle(Theme.inkDim).frame(width: 34, alignment: .trailing)
         }
     }
 
@@ -247,81 +251,101 @@ extension ContentView {
     }
 
     var transparentVideoBlock: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(L("Xuất video")).font(.headline)
+        VStack(alignment: .leading, spacing: Theme.Space.m) {
+            Text(L("Xuất video")).sectionHeaderStyle()
 
-            Picker(L("Khung hình"), selection: Binding<String>(
-                get: {
-                    let r = store.project.resolution
-                    return VideoResolution.presets.first { $0.value.width == r.width && $0.value.height == r.height }?.name ?? "Tuỳ chỉnh"
-                },
-                set: { name in
-                    if let preset = VideoResolution.presets.first(where: { $0.name == name }) {
-                        store.perform(L("Đổi khung hình")) {
-                            store.project.resolution.width = preset.value.width
-                            store.project.resolution.height = preset.value.height
+            // Khung hình + FPS
+            HStack(spacing: Theme.Space.l) {
+                Picker(L("Khung hình"), selection: Binding<String>(
+                    get: {
+                        let r = store.project.resolution
+                        return VideoResolution.presets.first { $0.value.width == r.width && $0.value.height == r.height }?.name ?? "Tuỳ chỉnh"
+                    },
+                    set: { name in
+                        if let preset = VideoResolution.presets.first(where: { $0.name == name }) {
+                            store.perform(L("Đổi khung hình")) {
+                                store.project.resolution.width = preset.value.width
+                                store.project.resolution.height = preset.value.height
+                            }
                         }
                     }
+                )) {
+                    ForEach(VideoResolution.presets, id: \.name) { Text($0.name).tag($0.name) }
+                    Text(L("Tuỳ chỉnh")).tag("Tuỳ chỉnh")
                 }
-            )) {
-                ForEach(VideoResolution.presets, id: \.name) { Text($0.name).tag($0.name) }
-                Text(L("Tuỳ chỉnh")).tag("Tuỳ chỉnh")
-            }
 
-            Picker("FPS", selection: Binding<Int>(
-                get: { Int(store.project.resolution.fps.rounded()) },
-                set: { newValue in store.perform(L("Đổi FPS")) { store.project.resolution.fps = Double(newValue) } }
-            )) {
-                ForEach([24, 25, 30, 50, 60], id: \.self) { Text("\($0)").tag($0) }
+                Picker("FPS", selection: Binding<Int>(
+                    get: { Int(store.project.resolution.fps.rounded()) },
+                    set: { newValue in store.perform(L("Đổi FPS")) { store.project.resolution.fps = Double(newValue) } }
+                )) {
+                    ForEach([24, 25, 30, 50, 60], id: \.self) { Text("\($0)").tag($0) }
+                }
+                .frame(width: 120)
             }
-
-            if exportOutput.isTransparent {
-                Text(L("Video trong suốt: .mov ProRes 4444 (chất lượng cao, xuất nhanh — file lớn)."))
-                    .font(.caption2).foregroundStyle(.secondary)
-            }
+            .font(Theme.Typo.label)
 
             Text(String(format: L("Dài ~%@"), TimeFormatting.clock(videoExportOutputDuration))
                  + (store.project.karaokeClipStart > 0.05
-                    ? String(format: L(" · karaoke vào ở %@"), TimeFormatting.clock(store.project.karaokeClipStart)) : ""))
-                .font(.caption).foregroundStyle(.secondary)
+                    ? String(format: L(" · karaoke vào ở %@"), TimeFormatting.clock(store.project.karaokeClipStart)) : "")
+                 + (exportOutput.isTransparent ? " · " + L("Video trong suốt: .mov ProRes 4444 (chất lượng cao, xuất nhanh — file lớn).") : ""))
+                .font(Theme.Typo.helper).foregroundStyle(Theme.inkFaint)
+                .fixedSize(horizontal: false, vertical: true)
 
-            Divider().padding(.vertical, 2)
+            Divider().overlay(Theme.stroke)
             audioForVideoBlock
 
-            if !exportOutput.isTransparent {
-                Toggle(L("Xuất .mov ProRes (nền màu đục — cho dựng phim)"), isOn: $exportProRes)
-                    .toggleStyle(.checkbox).font(.caption)
+            // Tuỳ chọn ít dùng — gập lại (DESIGN_SYSTEM §16).
+            collapsibleSection(L("Nâng cao"), expanded: $exportAdvancedOpen) {
+                VStack(alignment: .leading, spacing: Theme.Space.s) {
+                    if !exportOutput.isTransparent {
+                        Toggle(L("Xuất .mov ProRes (nền màu đục — cho dựng phim)"), isOn: $exportProRes)
+                            .toggleStyle(.checkbox).font(Theme.Typo.label)
+                    }
+                    if store.project.visualizer?.enabled == true {
+                        Button(L("Xuất riêng sóng nhạc (nền trong suốt)…")) { exportVisualizerOnly() }
+                            .buttonStyle(.kmSecondarySmall)
+                            .disabled(store.project.audio == nil || videoExporter.isExporting)
+                        Text(L("File .mov nền trong suốt, chỉ có sóng nhạc — chất lượng theo ô 'Chất lượng' ở trên. Ghép ở phần mềm khác."))
+                            .font(Theme.Typo.helper).foregroundStyle(Theme.inkFaint).fixedSize(horizontal: false, vertical: true)
+                    }
+                    if exportOutput.isTransparent && store.project.visualizer?.enabled != true {
+                        Text(L("Không có tuỳ chọn nâng cao cho video trong suốt."))
+                            .font(Theme.Typo.helper).foregroundStyle(Theme.inkFaint)
+                    }
+                }
             }
 
+            // Hành động chính
             if videoExporter.isExporting {
-                ProgressView(value: videoExporter.progress)
-                HStack {
-                    Text(videoExporter.statusText).font(.caption).foregroundStyle(.secondary)
-                    Spacer()
-                    Button(L("Huỷ")) { videoExporter.cancel() }
+                VStack(alignment: .leading, spacing: Theme.Space.xs) {
+                    ProgressView(value: videoExporter.progress).buttonStyle(.kmSecondarySmall)
+                    HStack {
+                        Text(videoExporter.statusText).font(Theme.Typo.helper).foregroundStyle(Theme.inkDim)
+                        Spacer()
+                        ElapsedLabel()
+                        Button(L("Huỷ")) { videoExporter.cancel() }.buttonStyle(.kmSecondarySmall)
+                    }
                 }
             } else {
-                Button(L("Xuất video…")) { exportTransparentVideo() }
-                    .buttonStyle(.borderedProminent)
+                HStack {
+                    Spacer()
+                    Button { exportTransparentVideo() } label: {
+                        Label(L("Xuất video…"), systemImage: "square.and.arrow.up")
+                    }
+                    .buttonStyle(.kmPrimaryLarge)
                     .disabled(!store.project.hasAnyTiming)
-
-                if store.project.visualizer?.enabled == true {
-                    Button(L("Xuất riêng sóng nhạc (nền trong suốt)…")) { exportVisualizerOnly() }
-                        .controlSize(.small)
-                        .disabled(store.project.audio == nil)
-                    Text(L("File .mov nền trong suốt, chỉ có sóng nhạc — chất lượng theo ô 'Chất lượng' ở trên. Ghép ở phần mềm khác."))
-                        .font(.caption2).foregroundStyle(.secondary)
                 }
             }
 
             if let out = videoExporter.lastOutputURL, !videoExporter.isExporting, videoExporter.lastError == nil {
-                HStack(spacing: 8) {
-                    Text(String(format: L("Đã xuất: %@"), out.lastPathComponent)).font(.caption).foregroundStyle(.green)
+                HStack(spacing: Theme.Space.s) {
+                    Image(systemName: "checkmark.circle.fill").foregroundStyle(Theme.success)
+                    Text(String(format: L("Đã xuất: %@"), out.lastPathComponent)).font(Theme.Typo.label).foregroundStyle(Theme.ink)
                         .lineLimit(1).truncationMode(.middle)
                     Spacer()
                     Button(L("Mở thư mục")) {
                         NSWorkspace.shared.activateFileViewerSelecting([out])
-                    }.controlSize(.small)
+                    }.buttonStyle(.kmSecondarySmall)
                 }
             }
         }
@@ -331,7 +355,7 @@ extension ContentView {
     var audioForVideoBlock: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Text(L("Âm thanh trong video")).font(.subheadline).bold()
+                Text(L("Âm thanh trong video")).font(Theme.Typo.labelStrong).foregroundStyle(Theme.ink)
                 Spacer()
                 Picker("", selection: $exportAudioChoice) {
                     ForEach(ExportAudioChoice.allCases) { Text(L($0.rawValue)).tag($0) }
@@ -341,8 +365,8 @@ extension ContentView {
             }
 
             if exportAudioChoice == .original, resolvedAudioURL == nil {
-                Text(L("⚠︎ Chưa nạp file nhạc."))
-                    .font(.caption).foregroundStyle(.orange)
+                Label(L("Chưa nạp file nhạc."), systemImage: "exclamationmark.triangle.fill")
+                    .font(Theme.Typo.helper).foregroundStyle(Theme.warning)
             }
 
             if exportAudioChoice == .beat { beatSeparationInline }
@@ -356,10 +380,10 @@ extension ContentView {
         VStack(alignment: .leading, spacing: 6) {
             if beatSepProxy.beatURL != nil, !beatSepProxy.isRunning {
                 HStack(spacing: 6) {
-                    Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
-                    Text(L("Đã có beat cho bài này.")).font(.caption)
+                    Image(systemName: "checkmark.circle.fill").foregroundStyle(Theme.success)
+                    Text(L("Đã có beat cho bài này.")).font(Theme.Typo.label)
                     Spacer()
-                    Button(L("Tách lại")) { runBeatSeparation() }.controlSize(.small)
+                    Button(L("Tách lại")) { runBeatSeparation() }.buttonStyle(.kmSecondarySmall)
                 }
             } else {
                 Button {
@@ -371,22 +395,23 @@ extension ContentView {
                         Text(L("Tạo beat"))
                     }
                 }
-                .controlSize(.small)
+                .buttonStyle(.kmSecondarySmall)
                 .disabled(beatSepProxy.isRunning || resolvedAudioURL == nil)
 
                 Text(L("Khoảng 30–60 giây."))
-                    .font(.caption2).foregroundStyle(.secondary)
+                    .font(Theme.Typo.helper).foregroundStyle(Theme.inkFaint)
             }
 
             if beatSepProxy.isRunning {
                 ProgressView(value: beatSepProxy.throttledProgress)
             }
             if beatSepProxy.status.hasPrefix("❌") {
-                Text(beatSepProxy.status).font(.caption).foregroundStyle(.orange)
+                Label(String(beatSepProxy.status.dropFirst().drop(while: { $0 == " " })), systemImage: "exclamationmark.triangle.fill")
+                    .font(Theme.Typo.helper).foregroundStyle(Theme.warning)
             }
         }
-        .padding(8)
-        .background(RoundedRectangle(cornerRadius: 6).fill(Theme.panelAlt))
+        .padding(Theme.Space.m)
+        .background(RoundedRectangle(cornerRadius: Theme.Radius.sm).fill(Theme.panelAlt))
     }
 
     func runBeatSeparation() {
