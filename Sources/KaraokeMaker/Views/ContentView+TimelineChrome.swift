@@ -48,16 +48,13 @@ extension ContentView {
                 Button {
                     withAnimation(.easeOut(duration: 0.15)) { duetMode.toggle() }
                 } label: {
-                    Label(L("Song ca"), systemImage: "music.mic").padding(.horizontal, 4)
+                    Label(L("Song ca"), systemImage: duetMode ? "person.2.fill" : "person.2")
                 }
+                .buttonStyle(.kmToggle(duetMode))
                 .disabled(store.project.lines.isEmpty)
-                .overlay(alignment: .center) {
-                    if duetMode {
-                        RoundedRectangle(cornerRadius: 7).strokeBorder(.white, lineWidth: 2)
-                    }
-                }
+                .help(L("Song ca"))
 
-                Divider().frame(height: 22)
+                Rectangle().fill(Theme.stroke).frame(width: 1, height: 16)
 
                 Button { addLeadWait(toLine: currentLineIndex, by: 0.25) } label: {
                     Label(L("Chữ sớm +0.25 (dòng)"), systemImage: "arrow.left.to.line")
@@ -72,9 +69,7 @@ extension ContentView {
                 .help(L("Cho CẢ BÀI hiện sớm hơn 0,25 giây"))
                 Spacer()
             }
-            .buttonStyle(.borderedProminent)   // xanh = bấm được; xám (disabled) = chưa bấm được
-            .tint(Theme.accent)
-            .controlSize(.small)
+            .buttonStyle(.kmSecondarySmall)   // nút PHỤ — màu nhấn chỉ dành cho hành động chính / trạng thái bật
 
             if duetMode { duetBar }
         }
@@ -229,6 +224,7 @@ extension ContentView {
             onAssignSinger: assignSingerTimeline,
             onKaraokeClipMove: timelineKaraokeClipMove,
             fitTick: timelineFitTick,
+            uncertainWordKeys: Set(validAutoUncertain.map { "\($0.lineID)#\($0.wordIndex)" }),
             pointsPerSecond: $timelineZoom,
             viewportWidth: $timelineViewportW
         )

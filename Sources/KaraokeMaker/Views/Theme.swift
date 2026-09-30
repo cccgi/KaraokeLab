@@ -48,6 +48,27 @@ enum Theme {
         static let error     = NSColor(srgbRed: 0xE5 / 255, green: 0x53 / 255, blue: 0x4B / 255, alpha: 1)
         static let success   = NSColor(srgbRed: 0x45 / 255, green: 0xB3 / 255, blue: 0x7E / 255, alpha: 1)
         static let playhead  = NSColor(srgbRed: 0xE5 / 255, green: 0x48 / 255, blue: 0x4D / 255, alpha: 1)
+        // Màu LÀN timeline (bão hoà thấp, luôn đi kèm nhãn / icon) — DESIGN_SYSTEM §14.
+        static let trackMedia   = NSColor(srgbRed: 0x6E / 255, green: 0x66 / 255, blue: 0xB0 / 255, alpha: 1) // ảnh / video
+        static let trackText    = NSColor(srgbRed: 0x5B / 255, green: 0x7F / 255, blue: 0xA6 / 255, alpha: 1) // lớp chữ
+        static let trackAudio   = NSColor(srgbRed: 0x4F / 255, green: 0x8F / 255, blue: 0x6B / 255, alpha: 1) // nhạc thêm
+        static let trackKaraoke = NSColor(srgbRed: 0x3E / 255, green: 0x92 / 255, blue: 0x8C / 255, alpha: 1) // clip KARAOKE
+        static let stagingLine  = NSColor(srgbRed: 0xC9 / 255, green: 0x85 / 255, blue: 0x3A / 255, alpha: 1) // DÒNG đang chờ
+        static let stagingWord  = NSColor(srgbRed: 0x4C / 255, green: 0x8F / 255, blue: 0xD1 / 255, alpha: 1) // CHỮ đang chờ
+
+        /// Ảnh SF Symbol đã tô màu, cache sẵn — để vẽ icon trong Core Graphics (thay emoji).
+        private static var symbolCache: [String: NSImage] = [:]
+        static func symbol(_ name: String, size: CGFloat, color: NSColor = .white) -> NSImage? {
+            let key = "\(name)|\(size)|\(color.hash)"
+            if let hit = symbolCache[key] { return hit }
+            guard let base = NSImage(systemSymbolName: name, accessibilityDescription: nil)?
+                .withSymbolConfiguration(.init(pointSize: size, weight: .semibold)) else { return nil }
+            let tinted = NSImage(size: base.size, flipped: false) { r in
+                base.draw(in: r); color.set(); r.fill(using: .sourceAtop); return true
+            }
+            symbolCache[key] = tinted
+            return tinted
+        }
     }
 
     // MARK: Chữ (SF Pro hệ thống) — 9 cỡ chuẩn, không dùng cỡ khác trong editor

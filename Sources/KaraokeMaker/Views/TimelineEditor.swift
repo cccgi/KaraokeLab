@@ -69,6 +69,8 @@ struct TimelineEditor: View {
     var onKaraokeClipMove: (Double) -> Void = { _ in }
     /// Tăng mỗi lần bấm "Vừa khung" → canvas kéo cuộn về đầu (x=0).
     var fitTick: Int = 0
+    /// Từ máy chưa chắc (karaoke tự động): khoá "\(lineID)#\(chỉ số từ)" → gạch chân màu cảnh báo trên timeline.
+    var uncertainWordKeys: Set<String> = []
 
     // M-C — do ContentView sở hữu để lệnh / menu điều khiển zoom.
     @Binding var pointsPerSecond: Double
@@ -300,7 +302,8 @@ struct TimelineEditor: View {
                         karaokeMuted: store.project.audioMuted,
                         karaokeHasContent: playback.duration > 0.1 || !store.project.lines.isEmpty,
                         onKaraokeClipMove: onKaraokeClipMove,
-                        fitTick: fitTick
+                        fitTick: fitTick,
+                        uncertainWordKeys: uncertainWordKeys
                     )
                     .onAppear { viewportWidth = geo.size.width }
                     .onChange(of: geo.size.width) { viewportWidth = $0 }
@@ -314,12 +317,12 @@ struct TimelineEditor: View {
                 // cuộn luôn nằm trong khung nhìn thấy được.
                 .frame(maxHeight: .infinity)
                 }
-                .background(RoundedRectangle(cornerRadius: 6).fill(Color.secondary.opacity(0.06)))
+                .background(Theme.bg.opacity(0.35))
 
                 Text(playback.isLoaded
                      ? L("Click thước/sóng = tua vạch đỏ · kéo clip lớp đè = dời (kéo dọc đổi làn), kéo mép = cắt · ✂️ hoặc ⌘K = tách tại vạch đỏ · Delete = xoá · double-click sửa · S tách / M gộp ô chữ · ⌘C/⌘V dán · ←→ nudge.")
                      : L("Chưa có nhạc vẫn dùng được: click thước để tua vạch đỏ, ▶ để chạy thử. Kéo nhạc/ảnh/video từ “File của bạn” xuống các làn bên dưới."))
-                    .font(.caption2).foregroundStyle(.secondary).lineLimit(2)
+                    .font(Theme.Typo.helper).foregroundStyle(Theme.inkFaint).lineLimit(1).truncationMode(.tail)
             }
         }
         .onAppear { playback.virtualDuration = duration }
@@ -328,9 +331,9 @@ struct TimelineEditor: View {
 
     private var header: some View {
         HStack(spacing: 8) {
-            Text(L("Timeline")).font(.headline)
+            Text(L("Timeline")).sectionHeaderStyle()
             if playback.isAnalyzingWaveform {
-                Text(L("đang phân tích sóng…")).font(.caption).foregroundStyle(.secondary)
+                Text(L("đang phân tích sóng…")).font(Theme.Typo.helper).foregroundStyle(Theme.inkFaint)
             }
 
             Divider().frame(height: 16).padding(.horizontal, 2)
@@ -350,16 +353,16 @@ struct TimelineEditor: View {
             toolButton("minus.magnifyingglass", L("Thu nhỏ (⌘−)"), enabled: true) { run(.zoomOut) }
             toolButton("plus.magnifyingglass", L("Phóng to (⌘=)"), enabled: true) { run(.zoomIn) }
             Button(L("Vừa khung")) { run(.zoomToFit) }
-                .controlSize(.small)
+                .buttonStyle(.kmSecondarySmall)
         }
     }
 
     @ViewBuilder
     private func toolButton(_ icon: String, _ help: String, enabled: Bool, _ action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Image(systemName: icon).frame(width: 22, height: 20)
+            Image(systemName: icon)
         }
-        .buttonStyle(.borderless)
+        .buttonStyle(.kmIcon)
         .disabled(!enabled)
         .help(help)
     }
@@ -433,6 +436,7 @@ private struct TimelineScrollRepresentable: NSViewRepresentable {
     var karaokeHasContent: Bool = false
     var onKaraokeClipMove: (Double) -> Void = { _ in }
     var fitTick: Int = 0
+    var uncertainWordKeys: Set<String> = []
 
     func makeNSView(context: Context) -> NSScrollView {
         let scroll = NSScrollView()
@@ -510,6 +514,7 @@ private struct TimelineScrollRepresentable: NSViewRepresentable {
                          muted: karaokeMuted, hasContent: karaokeHasContent)
         c.onAssignSinger = onAssignSinger
         c.singerColors = singerColors
+        c.setUncertainWordKeys(uncertainWordKeys)
         c.setDuetMode(duetMode)
         c.followScroll = false   // "Theo playhead" đã bỏ — user cuộn tay
         c.timeProvider = { [weak playback] in playback?.renderTime ?? 0 }
@@ -681,6 +686,25 @@ private final class TimelineCanvasView: NSView, NSTextFieldDelegate {
     private var karaokeClipLen: CGFloat = 0       // giây — độ dài dự phòng khi chưa có bài
     private var karaokeSongLen: CGFloat = 0       // giây — độ dài bài thật (0 = chưa nạp)
     private var karaokeMuted = false
+    /// Từ chưa chắc → gạch chân (DESIGN_SYSTEM §14). `uncertainLineIDs` lọc nhanh trước khi xét từng từ.
+    private var uncertainWordKeys: Set<String> = []
+    private var uncertainLineIDs: Set<String> = []
+    func setUncertainWordKeys(_ keys: Set<String>) {
+        guard keys != uncertainWordKeys else { return }
+        uncertainWordKeys = keys
+        uncertainLineIDs = Set(keys.compactMap { $0.split(separator: "#").first.map(String.init) })
+        needsDisplay = true
+    }
+    /// Từ `wi` của dòng có phải từ máy chưa chắc không (chỉ khi số ô chữ khớp số từ trong câu).
+    private func isUncertain(_ line: LyricLine, _ wi: Int) -> Bool {
+        let lid = line.id.uuidString
+        guard uncertainLineIDs.contains(lid), uncertainWordKeys.contains("\(line.id)#\(wi)") else { return false }
+        return line.words.count == line.text.split(whereSeparator: { $0.isWhitespace }).count
+    }
+    private func drawUncertainMark(_ r: CGRect) {
+        Theme.NS.warning.setFill()
+        NSBezierPath(rect: CGRect(x: r.minX + 1, y: r.maxY - 2.5, width: max(2, r.width - 2), height: 2)).fill()
+    }
     private var karaokeHasContent = false
     // Clip ★ CHỈ KÉO — không cắt, không sửa gì khác (user chốt 2026-09-08).
     private struct KaraokeDrag { var aStart: CGFloat; var downX: CGFloat; var moved = false }
@@ -859,10 +883,10 @@ private final class TimelineCanvasView: NSView, NSTextFieldDelegate {
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 
     private let playheadLayer: CALayer = {
-        let l = CALayer(); l.backgroundColor = NSColor.systemRed.cgColor; l.zPosition = 100; return l
+        let l = CALayer(); l.backgroundColor = Theme.NS.playhead.cgColor; l.zPosition = 100; return l
     }()
     private let triLayer: CALayer = {
-        let l = CALayer(); l.backgroundColor = NSColor.systemRed.cgColor; l.zPosition = 100; return l
+        let l = CALayer(); l.backgroundColor = Theme.NS.playhead.cgColor; l.zPosition = 100; return l
     }()
     private let sweepLayer: CALayer = {
         let l = CALayer(); l.backgroundColor = Theme.accentNS.withAlphaComponent(0.28).cgColor
@@ -1298,8 +1322,8 @@ private final class TimelineCanvasView: NSView, NSTextFieldDelegate {
                 p.close(); p.fill()
             }
         }
-        drawRulerDiamonds(vizKeyframeTimes, NSColor(calibratedRed: 0.10, green: 0.80, blue: 0.85, alpha: 0.95), yTop: rulerH - 8)
-        drawRulerDiamonds(textKeyframeTimes, NSColor(calibratedRed: 0.95, green: 0.85, blue: 0.30, alpha: 0.95), yTop: rulerH - 8)
+        drawRulerDiamonds(vizKeyframeTimes, Theme.NS.accent, yTop: rulerH - 8)
+        drawRulerDiamonds(textKeyframeTimes, Theme.NS.warning, yTop: rulerH - 8)
 
         // Nhãn track ở mép trái (như CapCut) + nền mờ cho dải "Lời".
         let trackLabel: [NSAttributedString.Key: Any] = [
@@ -1425,27 +1449,35 @@ private final class TimelineCanvasView: NSView, NSTextFieldDelegate {
         guard karaokeHasContent else {
             (L("★ KARAOKE — tạo karaoke xong sẽ hiện ở đây") as NSString).draw(
                 at: NSPoint(x: 8, y: karaokeStripTop + 5),
-                withAttributes: [.font: NSFont.systemFont(ofSize: 9),
-                                 .foregroundColor: NSColor.tertiaryLabelColor])
+                withAttributes: [.font: NSFont.systemFont(ofSize: 10),
+                                 .foregroundColor: Theme.NS.inkFaint])
             return
         }
 
         let r = karaokeClipRect()
-        let teal = NSColor(calibratedRed: 0.16, green: 0.72, blue: 0.66, alpha: 1)
+        let teal = Theme.NS.trackKaraoke
         let dragging = karaokeDrag != nil
         let body = NSBezierPath(roundedRect: r, xRadius: 4, yRadius: 4)
         teal.withAlphaComponent(dragging ? 0.42 : 0.30).setFill(); body.fill()
         teal.setStroke(); body.lineWidth = dragging ? 2 : 1.5; body.stroke()
 
-        // Nhãn "★ KARAOKE" (+ 🔇 nếu tắt tiếng chung).
-        let label = (karaokeMuted ? "🔇  " : "") + "★ KARAOKE"
+        // Nhãn: icon micro (+ icon tắt tiếng nếu tắt tiếng chung) + "KARAOKE" — SF Symbols thay emoji.
         let la: [NSAttributedString.Key: Any] = [
             .font: NSFont.systemFont(ofSize: 10, weight: .bold),
             .foregroundColor: NSColor.white.withAlphaComponent(0.92)]
-        let clip = r.insetBy(dx: 9, dy: 2)
+        var clip = r.insetBy(dx: 8, dy: 2)
         if clip.width > 20 {
-            (label as NSString).draw(with: clip,
-                options: [.usesLineFragmentOrigin, .truncatesLastVisibleLine], attributes: la)
+            for name in (karaokeMuted ? ["speaker.slash.fill", "music.mic"] : ["music.mic"]) {
+                guard clip.width > 14, let img = Theme.NS.symbol(name, size: 9) else { continue }
+                let s = img.size
+                img.draw(in: CGRect(x: clip.minX, y: r.midY - s.height / 2, width: s.width, height: s.height),
+                         from: .zero, operation: .sourceOver, fraction: 0.92, respectFlipped: true, hints: nil)
+                clip.origin.x += s.width + 4; clip.size.width -= s.width + 4
+            }
+            if clip.width > 20 {
+                ("KARAOKE" as NSString).draw(with: clip,
+                    options: [.usesLineFragmentOrigin, .truncatesLastVisibleLine], attributes: la)
+            }
         }
 
         // Mốc bắt đầu > 0 → vạch mảnh nối về 0 để thấy "đã dời".
@@ -1477,7 +1509,7 @@ private final class TimelineCanvasView: NSView, NSTextFieldDelegate {
 
     /// Màu riêng theo loại — DÒNG = cam, CHỮ = xanh dương — để phân biệt rõ 2 thứ khi cả 2
     /// cùng đang chờ (trước đây cả 2 đều cam, dễ lẫn).
-    private func stagingTint(_ k: StageKind) -> NSColor { k == .line ? .systemOrange : .systemBlue }
+    private func stagingTint(_ k: StageKind) -> NSColor { k == .line ? Theme.NS.stagingLine : Theme.NS.stagingWord }
 
     private func drawStagingItem(_ ctx: CGContext, width: CGFloat, kind k: StageKind) {
         guard let st = staging(k), let sr = stagingRect(k) else { return }
@@ -1491,13 +1523,13 @@ private final class TimelineCanvasView: NSView, NSTextFieldDelegate {
         // có gì báo "thả đúng chỗ" — user báo thiếu, giờ thêm y hệt kiểu chữ).
         if dragging, !st.isLine, let li = stagingDropLine {
             let r = blockRect(li).insetBy(dx: -2, dy: -2)
-            NSColor.systemGreen.withAlphaComponent(0.9).setStroke()
+            Theme.NS.success.withAlphaComponent(0.9).setStroke()
             let gp = NSBezierPath(roundedRect: r, xRadius: 4, yRadius: 4); gp.lineWidth = 2; gp.stroke()
         }
         if dragging, st.isLine, let g = stagingDropGap {
             let r = CGRect(x: (g.lo + lyricOff) * pps, y: laneY(0),
                            width: max(2, (g.hi - g.lo) * pps), height: laneHeight).insetBy(dx: 2, dy: 2)
-            NSColor.systemGreen.withAlphaComponent(0.9).setStroke()
+            Theme.NS.success.withAlphaComponent(0.9).setStroke()
             let gp = NSBezierPath(roundedRect: r, xRadius: 4, yRadius: 4); gp.lineWidth = 2; gp.stroke()
         }
 
@@ -1622,21 +1654,19 @@ private final class TimelineCanvasView: NSView, NSTextFieldDelegate {
             NSBezierPath(roundedRect: laneRect.insetBy(dx: 0, dy: 0.5), xRadius: 2, yRadius: 2).fill()
             (String(format: L("Lớp đè %d"), lane + 1) as NSString).draw(
                 at: NSPoint(x: 4, y: y + 3),
-                withAttributes: [.font: NSFont.systemFont(ofSize: 8, weight: .semibold),
-                                 .foregroundColor: NSColor.quaternaryLabelColor])
+                withAttributes: [.font: NSFont.systemFont(ofSize: 10, weight: .semibold),
+                                 .foregroundColor: Theme.NS.inkFaint])
         }
         if overlays.isEmpty {
             (L("Kéo ảnh / video / nhạc từ “File của bạn” xuống đây") as NSString).draw(
                 at: NSPoint(x: 70, y: overlayLaneY(0) + 3),
-                withAttributes: [.font: NSFont.systemFont(ofSize: 9),
-                                 .foregroundColor: NSColor.tertiaryLabelColor])
+                withAttributes: [.font: NSFont.systemFont(ofSize: 10),
+                                 .foregroundColor: Theme.NS.inkFaint])
         }
 
-        let purple = NSColor(calibratedRed: 0.62, green: 0.42, blue: 0.92, alpha: 1)
-        let green  = NSColor(calibratedRed: 0.20, green: 0.72, blue: 0.45, alpha: 1)
         for i in overlays.indices {
             let c = overlays[i]
-            let base = c.kind == .audio ? green : purple
+            let base = c.kind == .audio ? Theme.NS.trackAudio : (c.kind == .text ? Theme.NS.trackText : Theme.NS.trackMedia)
             let r = overlayRect(i)
             let sel = c.id == selOverlayID || selOverlayIDs.contains(c.id)
             let path = NSBezierPath(roundedRect: r, xRadius: 3, yRadius: 3)
@@ -1666,23 +1696,35 @@ private final class TimelineCanvasView: NSView, NSTextFieldDelegate {
             // Nhãn kiểu "chip" nền tối — tên + thời lượng, LUÔN đọc rõ dù có ảnh phía sau.
             if r.width > 24 {
                 let para = NSMutableParagraphStyle(); para.lineBreakMode = .byTruncatingTail
-                let tag = (c.kind == .video ? "🎬 " : c.kind == .audio ? "🎵 " : c.kind == .text ? "🅰 " : "")
-                    + (c.isHidden ? "🚫 " : "")
-                    + (c.kind == .audio && c.audioMuted ? "🔇 " : "")
+                // Icon SF Symbols (thay emoji 🎬 🎵 🅰 🚫 🔇): loại clip + ẩn + tắt tiếng.
+                var icons: [String] = [c.kind == .video ? "film" : c.kind == .audio ? "music.note" : c.kind == .text ? "textformat" : "photo"]
+                if c.isHidden { icons.append("eye.slash") }
+                if c.kind == .audio && c.audioMuted { icons.append("speaker.slash.fill") }
+                let imgs = icons.compactMap { Theme.NS.symbol($0, size: 8) }
+                let iconsW = imgs.reduce(CGFloat(0)) { $0 + $1.size.width + 3 }
                 let label = c.kind == .text ? (c.text.isEmpty ? L("Chữ") : c.text) : c.name
-                let full = tag + label + "   " + TimeFormatting.clock(c.duration)
-                let attrs: [NSAttributedString.Key: Any] = [.font: NSFont.systemFont(ofSize: 9, weight: .semibold),
+                let full = label + "   " + TimeFormatting.clock(c.duration)
+                let attrs: [NSAttributedString.Key: Any] = [.font: NSFont.systemFont(ofSize: 10, weight: .semibold),
                                                              .foregroundColor: NSColor.white, .paragraphStyle: para]
-                let maxW = max(10, r.width - 10)
+                let maxW = max(10, r.width - 10 - iconsW)
                 let textSize = (full as NSString).boundingRect(
                     with: CGSize(width: maxW, height: 20),
                     options: [.usesLineFragmentOrigin], attributes: attrs).size
                 let chipRect = CGRect(x: r.minX + 3, y: r.maxY - textSize.height - 7,
-                                      width: min(maxW + 8, textSize.width + 10), height: textSize.height + 4)
+                                      width: min(r.width - 6, iconsW + textSize.width + 10), height: textSize.height + 4)
                 NSColor.black.withAlphaComponent(0.55).setFill()
                 NSBezierPath(roundedRect: chipRect, xRadius: 3, yRadius: 3).fill()
-                (full as NSString).draw(with: chipRect.insetBy(dx: 5, dy: 2),
-                                       options: [.usesLineFragmentOrigin, .truncatesLastVisibleLine], attributes: attrs)
+                var ix = chipRect.minX + 5
+                for img in imgs where ix + img.size.width < chipRect.maxX - 4 {
+                    img.draw(in: CGRect(x: ix, y: chipRect.midY - img.size.height / 2, width: img.size.width, height: img.size.height),
+                             from: .zero, operation: .sourceOver, fraction: 0.95, respectFlipped: true, hints: nil)
+                    ix += img.size.width + 3
+                }
+                let textRect = CGRect(x: ix, y: chipRect.minY + 2, width: max(0, chipRect.maxX - 5 - ix), height: chipRect.height - 4)
+                if textRect.width > 6 {
+                    (full as NSString).draw(with: textRect,
+                                           options: [.usesLineFragmentOrigin, .truncatesLastVisibleLine], attributes: attrs)
+                }
             }
             // Dốc "hiện dần / mờ dần" (tam giác mờ ở 2 đầu) + tay nắm khi clip đang chọn.
             var fin = CGFloat(c.fadeIn), fout = CGFloat(c.fadeOut)
@@ -1777,7 +1819,7 @@ private final class TimelineCanvasView: NSView, NSTextFieldDelegate {
         let isSel = selIDs.contains(line.id) || (selIDs.isEmpty && i == selectedIndex)
         let isActive = i == activeLine
         let empty = line.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !recording
-        let base: NSColor = empty ? .systemOrange : Theme.accentNS
+        let base: NSColor = empty ? Theme.NS.warning : Theme.accentNS
 
         let hoverLine = (hoverHit.wordIdx == nil && hoverHit.lineIdx == i)
         // Câu active có chữ: thân "dòng" chỉ là DẢI TRÊN mảnh; chữ vẽ ở dải dưới (có khe).
@@ -1870,6 +1912,7 @@ private final class TimelineCanvasView: NSView, NSTextFieldDelegate {
                         (word.text as NSString).draw(with: chip.insetBy(dx: 2, dy: 3),
                             options: [.usesLineFragmentOrigin, .truncatesLastVisibleLine], attributes: attrs)
                     }
+                    if isUncertain(line, wi) { drawUncertainMark(chip) }
                 } else {
                     let x0 = max(inner.minX, (cs + lyricOff) * pps), x1 = min(inner.maxX, (ce + lyricOff) * pps)
                     guard x1 > x0 - 1 else { continue }
@@ -1881,6 +1924,9 @@ private final class TimelineCanvasView: NSView, NSTextFieldDelegate {
                         (word.text as NSString).draw(
                             with: CGRect(x: x0 + 1, y: inner.minY, width: x1 - x0 - 2, height: inner.height),
                             options: [.usesLineFragmentOrigin, .truncatesLastVisibleLine], attributes: attrs)
+                    }
+                    if isUncertain(line, wi) {
+                        drawUncertainMark(CGRect(x: x0, y: rect.minY, width: x1 - x0, height: rect.height))
                     }
                 }
             }
